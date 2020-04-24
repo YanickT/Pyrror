@@ -6,6 +6,12 @@ from logik.formula import Formula
 class Table(object):
 
     def __init__(self, column_names=[], columns=2, signs=[]):
+        """
+        Creates a Table-Object
+        :param column_names: List[str]; Names of the columns
+        :param columns: int; number of columns
+        :param signs: List[Optional[Unit, str]]; sign or unit of each column
+        """
         self.datas = []
         self.columns = columns
         self.column_names = []
@@ -31,7 +37,11 @@ class Table(object):
         else:
             self.column_names = column_names
 
-    def __str__(self):  # str()
+    def __str__(self):
+        """
+        Method to show a Table-Object
+        :return: Table as string formated
+        """
         width = [len(self.column_names[i]) + len(str(self.units[i])) + 3 + 4 if len(str(self.units[i])) > 0\
                  else len(self.column_names[i]) + 4 for i in range(self.columns)]
         # die + 3 kommen aus " [" und "]". Die +4 sind ein zusätzlicher Abstand
@@ -74,7 +84,12 @@ class Table(object):
 
         return string
 
-    def __add__(self, other):  # +
+    def __add__(self, other):
+        """
+        merge two tables: Add the data of the other table into first one.
+        :param other: Table-Object.
+        :return: void
+        """
         type_other = type(other)
         if type_other == Table:
             if self.columns == other.columns:
@@ -91,6 +106,18 @@ class Table(object):
             raise ValueError("Unsupported operation '+' for table an %s" % type_other)
 
     def calc(self, formula, index_dict, column_name="", sign=True):
+        """
+        Method for calculating new columns with dependencies to others given by a formula.
+        The new column is added to the current data.
+        :param formula: Formula-Object; Connection between parameters, and table columns
+        :param index_dict: Dict[str, Optional[int, str]];
+            key (str): name of variable or parameter in formula-object
+            value (int): index of column in table for the parameter at key
+            value (str): fixed parameter for equation. Should be str(<float>) (equal for all columns)
+        :param column_name: str; Name of the arising column
+        :param sign: Optional[Unit, str]; sign/unit of the arising column
+        :return: void
+        """
         # formula = Object of class Formula; index_dict = {"x":1,"y":0}
         if type(formula) != Formula:
             raise ValueError("Given formula is not of type formula!")
@@ -128,12 +155,17 @@ class Table(object):
                 unit = formula.calc_unit(new_dict, type_dict)
                 self.units.append(unit)
             elif sign is False:
-                self.units.append("")
+                self.units.append(Unit(""))
             else:
                 self.units.append(sign)
             # update units
 
     def add(self, data_tuple):
+        """
+        Adds a data-row to table
+        :param data_tuple: Tuple[Optional[int, float, Const, Data]] data for each column of table
+        :return: void
+        """
         type_tuple = type(data_tuple)
 
         if type_tuple == list:
@@ -142,47 +174,26 @@ class Table(object):
             raise ValueError("Expected a tuple, get %s instead" % type_tuple)
 
         if len(data_tuple) == self.columns:
-            """
-            new_data = []
-            for index, data in enumerate(data_tuple):
-                if type(data) == Data:
-                    if self.units[index] != Unit(""):
-                        if self.units[index] != data.unit and data.unit != Unit(""):
-                            raise Exception("Can´t fill column of %s with %s" % (self.units[index], data.unit))
-                        new_one = Data(value=str(data.value),
-                                       error=str(data.error),
-                                       n=data.n,
-                                       sign=Unit(""))
-                        new_data.append(new_one)
-                    else:
-                        new_data.append(data)
-
-                elif type(data) == Const:
-                    if self.units[index] != Unit(""):
-                        if self.units[index] != data.unit and data.unit != Unit(""):
-                            raise Exception("Can´t fill column of %s with %s" % (self.units[index], data.unit))
-                        new_one = Const(value=data.value,
-                                        sign=Unit(""))
-                        new_data.append(new_one)
-                    else:
-                        new_data.append(data)
-                        
-                else:
-                    new_data.append(data)
-            self.datas.append(new_data)
-            """
-            """Alternative:"""
             for index, data in enumerate(data_tuple):
                 if type(data) in [Data, Const]:
                     if data.unit != self.units[index] and data.unit != Unit(""):
                         raise Exception("Can´t fill column of %s with %s" % (self.units[index], data.unit))
                     elif data.unit == Unit(""):
                         data_tuple[index].unit = self.units[index]
-            self.datas.append(data_tuple) # alternativ dieses entfernen
+            self.datas.append(data_tuple)
         else:
             raise ValueError("Expected an tuple of %s, get tuple of %s instead" % (self.columns, len(data_tuple)))
 
     def arithmetic_average(self):
+        """
+        calculates the arithmetic_average and their std_error for all columns.
+        In case of Data column the average will be the weighted average
+        average: 1/N * sum(data)
+        std_error: sqrt( sum(data - average)^2 * 1/(n * (n - 1)) )
+        weighted average: 1 / sum(1/(error^2)) * sum(data/(error^2))
+        weighted error: sqrt( sum(1/(error^2)) )
+        :return: List[Data]; List for each column of average and std_error
+        """
         averages = []
         n = float(len(self.datas))
         for i in range(self.columns):
@@ -214,6 +225,11 @@ class Table(object):
         return averages
 
     def geometric_average(self):
+        """
+        calculates the geometric_average for all columns.
+        average: product( data )^(1/n)
+        :return: List[Optional[float, Const]]
+        """
         averages = []
         n = float(len(self.datas))
         for i in range(self.columns):
@@ -231,6 +247,11 @@ class Table(object):
         return averages
 
     def harmonic_average(self):
+        """
+        calculates the harmonic_average for all columns.
+        average: n / sum(1 / data)
+        :return: List[Optional[float, Const]]
+        """
         averages = []
         n = float(len(self.datas))
         for i in range(self.columns):
@@ -243,6 +264,11 @@ class Table(object):
         return averages
 
     def median(self):
+        """
+        returns median for all columns
+        median: is the value at the half list length if sorted by value
+        :return: List[Optional[float, Const]]
+        """
         medians = []
         for i in range(self.columns):
             column_data = [data[i].value if type(data[i]) in [Data, Const] else data[i] for data in self.datas]
@@ -261,6 +287,10 @@ class Table(object):
         return medians
 
     def find_peaks(self):
+        """
+        search for all peaks in all columns. A peak is defined as x_{n-1} < x_{n} > x_{n+1}
+        :return: List[List[Optional[float, Const, Data]]]
+        """
         peaks = []
         n = len(self.datas)
         for i in range(self.columns):
@@ -294,6 +324,10 @@ class Table(object):
         return peaks
 
     def find_dips(self):
+        """
+        search for all dips in all columns. A dip is defined as x_{n-1} > x_{n} < x_{n+1}
+        :return: List[List[Optional[float, Const, Data]]]
+        """
         dips = []
         n = len(self.datas)
         for i in range(self.columns):
@@ -327,6 +361,11 @@ class Table(object):
         return dips
 
     def modus(self):
+        """
+        calculate modus of each column.
+        modus: most common value in column
+        :return: List[Optional[float, Const, Data]]
+        """
         modes = []
         for i in range(self.columns):
             column_data = [data[i].value if type(data[i]) in [Data, Const] else data[i] for data in self.datas]
@@ -353,6 +392,10 @@ class Table(object):
         return modes
 
     def max(self):
+        """
+        return the max of each column.
+        :return: List[Optional[float, Data, Const]]
+        """
         result = []
         for i in range(0, self.columns):
             current_column_datas = [element[i] for element in self.datas]
@@ -383,6 +426,10 @@ class Table(object):
         return result
 
     def min(self):
+        """
+        return the min of each column.
+        :return: List[Optional[float, Data, Const]]
+        """
         result = []
         for i in range(0, self.columns):
             current_column_datas = [element[i] for element in self.datas]
@@ -412,10 +459,20 @@ class Table(object):
         return result
 
     def delete(self, line_index):
+        """
+        delete the data-row at line_index
+        :param line_index: int
+        :return: void
+        """
         del self.datas[line_index]
         return True
 
     def drop(self, line_index):
+        """
+        return and delete data-row at line_index
+        :param line_index: int
+        :return: Tuple[Optional[int, float, Const, Data]]
+        """
         results = self.datas.pop(line_index)
         new_results = []
         for index, result in enumerate(results):
@@ -430,6 +487,11 @@ class Table(object):
         return new_results
 
     def add_column(self, name=""):
+        """
+        Adds a column to table.
+        :param name: str; name of the new table
+        :return: void
+        """
         if name == "":
             self.column_names.append("Column %s" % self.columns)
         else:
@@ -442,10 +504,16 @@ class Table(object):
             element += [""]
             element = tuple(element)
             self.datas[index] = element
-
         return True
 
     def insert(self, line, column, value):
+        """
+        insert a value at line, column in table
+        :param line: int; line in the table
+        :param column: int; column in the table
+        :param value: Optional[float, int, Data, Const]; new value for slot
+        :return: void
+        """
         if type(value) == Data:
             value = Data(value=str(value.value),
                          error=str(value.error),
@@ -462,14 +530,54 @@ class Table(object):
         self.datas[line] = data_l
         return True
 
+    def export(self, path, replace_dot=False):
+        """
+        Exports data in .csv format
+        :param path: path to .csv file (.csv in name needed)
+        :param replace_dot: difference between english and german floats "3.11", "3,11"
+        :return: void
+        """
+        data_cols = [any([isinstance(row[i], Data) for row in self.datas]) for i in range(self.columns)]
+
+        doc = open(path, "w", encoding="UTF-8")
+        try:
+            # columnname1|   |
+            # value| error |
+
+            # write table headers
+            doc.write("".join([f"{h_str};;" if data_col else f"{h_str};"
+                               for data_col, h_str in zip(data_cols,
+                                                          [f"{column_name} [{unit}]" if unit != Unit("")
+                                                           else column_name
+                                                           for column_name, unit in zip(self.column_names, self.units)])
+                               ]) + "\n")
+
+            doc.write("".join(["Bestwert; Fehler;" if data_col else "Bestwert;" for data_col in data_cols]) + "\n")
+
+            # write data
+            for row in self.datas:
+                data_string = "".join([f"{data.value};{data.error};" if data_col
+                                       else f"{data.value};" if type(data) == Const else f"{data};"
+                                       for data, data_col in zip(row, data_cols)]) + "\n"
+                if replace_dot:
+                    data_string = data_string.replace(".", ",")
+
+                doc.write(data_string)
+
+        finally:
+            doc.close()
+
+    def import_(self, path):
+        pass
+
 
 if __name__ == "__main__":
     from logik.formula import Formula
     tab = Table(columns=2, column_names=["x", "y"], signs=["", "mV"])
 
-    for i in range(1,100):
+    for i in range(1, 100):
         tab.add([i, Data(str(i), "0.05")])
-    print(tab)
+    #print(tab)
 
     f = Formula("2/x")
     tab.calc(f, {"x": 0}, column_name="z")
@@ -478,4 +586,5 @@ if __name__ == "__main__":
     f = Formula("a * x / y * z")
     tab.calc(f, {"a": "3", "x": 1, "y": 2, "z": 3})
     print(tab)
-    print(tab.datas[0][3])
+    tab.export(r"C:\Users\NPC\Desktop\dummy.csv", replace_dot=True)
+    #print(tab.datas[0][3])

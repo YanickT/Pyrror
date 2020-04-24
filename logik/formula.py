@@ -100,6 +100,7 @@ class Formula:
                     exec("error = error.subs(%s, %s)" % (d_key, error_value), dummy)
             exec("%s = Symbol('%s')" % (key, key), dummy)
             exec("error = error.subs(%s, %s)" % (key, value), dummy)
+
         return dummy["error"]
 
     @instancemethod
@@ -123,7 +124,7 @@ class Formula:
         units = self.__get_units(sympy.nsimplify(dummy["unit"]))
 
         if not units:
-            return ""
+            return Unit("")
 
         numerator = []
         denominator = []
@@ -155,9 +156,9 @@ class Formula:
 
         string = ""
         string += "Formel:\n"
-        string += pretty(formula, use_unicdoe=False)
+        string += pretty(formula)#, use_unicdoe=False)
         string += "\nFehlerformel nach Gauß:\n"
-        string += pretty(error_f, use_unicode=False)
+        string += pretty(error_f)#, use_unicode=False)
         return string
 
     @instancemethod

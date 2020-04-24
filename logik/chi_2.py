@@ -1,6 +1,6 @@
 from scipy.stats import chi2
 from logik.data import Const, Data
-from logik.Graph import Graph
+from logik.graph import Graph
 
 
 class Chi2:

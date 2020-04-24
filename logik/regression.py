@@ -1,7 +1,9 @@
 from sympy import Matrix
 import sympy
+
 from logik.data import Data, Const
 from logik.formula import Formula
+from logik.table import Table
 from logik.controlls import type_check
 from abc import ABC, abstractmethod
 from logik.chi_2 import Chi2
@@ -361,20 +363,3 @@ if __name__ == "__main__":
     a = KovRegression("y = a + b*x + c*x**2", tab, {"x": 0, "y": 1}, ["a", "b", "c"])
     print(a)
     print(a.calc(80))
-
-    tab = Table(columns=2, column_names=["x", "y"], signs=["°C", "mV"])
-    f = lambda x: 3*x+7
-    for i in range(100):
-        tab.add((i, Data(str(f(i)+gauss(20)), "1")))
-
-    print("\n")
-    reg = SimpleRegression(tab, {"x": 0, "y": 1})
-    print(reg)
-    reg.residues()
-    print(reg.calc(5))
-
-    print("\n")
-    reg = GaussRegression(tab, {"x": 0, "y": 1})
-    print(reg)
-    reg.residues()
-    print(reg.calc(5))
