@@ -355,7 +355,7 @@ class Const:
 
     @instancemethod
     def __sub__(self, other):
-        self.add(self, -1 * other)
+        return self.__add__(-1 * other)
 
     @instancemethod
     def __truediv__(self, other):  # Division

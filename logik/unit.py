@@ -2,9 +2,22 @@ from logik.controlls import type_check, instancemethod
 from copy import deepcopy
 
 
-class Unit(object):
+class Unit:
+
+    """
+    Unit class.
+    The class can not(!) identify prefactors like km as 1000 m
+    """
 
     def __init__(self, numerator="", denominator=""):  # numerator = "m;N" , denominator = "s^2;N"  => m/s^2
+        """
+        Initialize a unit. Units are given in the following format:
+        S := units | units '/' units
+        units := unit | unit ';' unit
+        unit := string | string '^' integer
+        :param numerator: string = unit constructed as shown in grammar
+        :param denominator:string = unit constructed as shown in grammar
+        """
 
         type_check((numerator, str), (denominator, str))
 
@@ -29,46 +42,38 @@ class Unit(object):
 
         self.__ease()
 
+    @instancemethod
     def __str__(self):
-        string = ""
-        if self.numerator == [] and self.denominator == []:
-            return ""
-        elif self.numerator == [] and self.denominator != []:
-            string += "1"
-        else:
-            for element in self.numerator:
-                if element != self.numerator[0]:
-                    string += "*"
-                string += element[0]
-                if element[1] != 1:
-                    if element[1] == int(element[1]):
-                        upper = int(element[1])
-                    else:
-                        upper = element[1]
-                    string += "^%s" % upper
+        """
+        Creates pretty string for the units.
+        :return: str = representation of the units
+        """
 
-        if self.denominator != []:
-            if len(self.numerator) > 1:
-                string = "(" + string + ")"
-            string += "/"
-            if len(self.denominator) > 1:
-                string += "("
-            for element in self.denominator:
-                if element != self.denominator[0]:
-                    string += "*"
-                string += element[0]
-                if element[1] != 1:
-                    if element[1] == int(element[1]):
-                        upper = int(element[1])
-                    else:
-                        upper = element[1]
-                    string += "^%s" % upper
-            if len(self.denominator) > 1:
-                string += ")"
+        if not self.numerator and not self.denominator:
+            return ""
+        elif not self.numerator and self.denominator:
+            unit_strings = ["1"]
+        else:
+            numerator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in self.numerator]
+            units = [f"{unit}" if 1 == power else f"{unit}^{power}" for unit, power in numerator]
+            unit_strings = ["*".join(units)]
+
+        if self.denominator:
+            denominator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in self.denominator]
+            units= [f"{unit}" if 1 == power else f"{unit}^{power}" for unit, power in denominator]
+            unit_strings.append("*".join(units))
+
+        string = "/".join([f"({units})" if units.count("*") else f"{units}" for units in unit_strings])
         return string
 
     @instancemethod
     def __mul__(self, other):
+        """
+        Multiplication with other unit.
+        :param other: Unit = another unit to multiply with
+        :return: Unit = Result of the multiplication
+        """
+
         type_check((other, Unit))
 
         denominator = deepcopy(self.denominator)
@@ -106,6 +111,12 @@ class Unit(object):
 
     @instancemethod
     def __pow__(self, other):
+        """
+        Power to an unit.
+        :param other: int = power
+        :return: Unit = former unit power given int
+        """
+
         denominator = deepcopy(self.denominator)
         numerator = deepcopy(self.numerator)
         signs = [element[0] for element in self.denominator]
@@ -125,6 +136,12 @@ class Unit(object):
 
     @instancemethod
     def __truediv__(self, other):
+        """
+        Division with other unit.
+        :param other: Unit = another unit to divide with
+        :return: Unit = Result of the division
+        """
+
         type_check((other, Unit))
 
         denominator = deepcopy(self.denominator)
@@ -161,6 +178,10 @@ class Unit(object):
         return result
 
     def __ease(self):
+        """
+        Simplifies the current given units. For example m * s / m -> s
+        :return: void
+        """
         num_sign = [element[0] for element in self.numerator]
         den_sign = [element[0] for element in self.denominator]
 
@@ -189,20 +210,34 @@ class Unit(object):
 
         return True
 
+    @instancemethod
     def __eq__(self, other):
+        """
+        Compares two different Units.
+        :param other: Unit = other Unit to compare with
+        :return: bool
+        """
         if type_check((other, Unit)):
-            self.denominator.sort()
-            other.denominator.sort()
-            self.numerator.sort()
-            other.numerator.sort()
+            den1 = deepcopy(self.denominator)
+            den1.sort()
+            den2 = deepcopy(other.denominator)
+            den2.sort()
+            nom1 = deepcopy(self.numerator)
+            nom1.sort()
+            nom2 = deepcopy(other.numerator)
+            nom2.sort()
 
-            if self.denominator == other.denominator and self.numerator == other.numerator:
+            if den1 == den2 and nom1 == nom2:
                 return True
             else:
                 return False
 
     @instancemethod
     def flip(self):
+        """
+        Flips the Unit. E.g. m/s -> s/m.
+        :return: Unit = flipped unit
+        """
         result = Unit()
         result.numerator = self.denominator
         result.denominator = self.numerator

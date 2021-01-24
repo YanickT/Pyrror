@@ -51,6 +51,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(str(c.flip()), "1/m^2")
         self.assertEqual(str(d.flip()), "1/(m*s)")
         self.assertEqual(str(e.flip()), "1/(s*m)")
+
         self.assertEqual(str(f.flip()), "(kg*s)/(N*m)")
         self.assertEqual(str(g.flip()), "")
 

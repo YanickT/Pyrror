@@ -20,7 +20,7 @@ class Formula:
 
     @staticmethod
     def __get_units(sympy_exp):
-        if type(sympy_exp) == sympy.add.Add:
+        if type(sympy_exp) == sympy.core.add.Add:
             return False
 
         units = []
@@ -29,11 +29,11 @@ class Formula:
             return units
         exps = list(sympy_exp.args)
         for exp in exps:
-            if type(exp) == sympy.power.Pow:
+            if type(exp) == sympy.core.power.Pow:
                 units.append([str(exp.args[0]), float(exp.args[1])])
             elif type(exp) == Symbol:
                 units.append([str(exp), 1])
-            elif type(exp) in [sympy.numbers.Integer, sympy.numbers.Float]:
+            elif type(exp) in [sympy.core.numbers.Integer, sympy.core.numbers.Float]:
                 pass
             else:
                 print("Einheit in nicht linearer Funktion:\n\t%s\n\t=> Einheit wird ignoriert" % exp)
@@ -170,7 +170,8 @@ class Formula:
             type_dict[key] = type(value)
 
         result = float(self.__calc_result(value_dict, type_dict))
-        unit = self.calc_unit(value_dict, type_dict)
+        # unit = self.calc_unit(value_dict, type_dict)
+        unit = "1"
 
         if Data in type_dict.values():
             error = float(self.__calc_error(value_dict, type_dict))
