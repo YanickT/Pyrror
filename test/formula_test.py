@@ -12,6 +12,11 @@ d4 = Data("8.3", "2", n=2)
 d5 = Data("99.25", "20", n=2)
 d6 = Data("100.1", "1")
 
+d7 = Data("1", "1", n=2, sign="m/s")
+d8 = Data("1", "1", n=2, sign="m^2/s;J")
+d9 = Data("1", "1", n=2, sign="J")
+d10 = Data("1", "1", n=2, sign="s")
+
 
 class MyTestCase(unittest.TestCase):
     def test_with_native(self):
@@ -56,6 +61,14 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual("%s" % (f1.calc({"x": d2, "y": d4})), "(1.4±3.0)")
         self.assertEqual("%s" % (f1.calc({"x": d2, "y": d5})), "(-8.9±2.0)*10^1")
         self.assertEqual("%s" % (f1.calc({"x": d2, "y": d6})), "(-90±2)")
+
+    def test_with_units(self):
+        f1 = Formula("x * y")
+        self.assertEqual(str(f1.calc({"x": d7, "y": d10})), "(1.0±1.4) m")
+        self.assertEqual(str(f1.calc({"x": d9, "y": d7})), "(1.0±1.4) (J*m)/s")
+
+        f2 = Formula("x * y / u")
+        self.assertEqual(str(f1.calc({"x": d8, "y": d9, "z": d7, "u": d10})), "(1.0±1.4)")
 
 
 if __name__ == '__main__':

@@ -3,7 +3,6 @@ from copy import deepcopy
 
 
 class Unit:
-
     """
     Unit class.
     The class can not(!) identify prefactors like km as 1000 m
@@ -21,24 +20,16 @@ class Unit:
 
         type_check((numerator, str), (denominator, str))
 
-        self.numerator = []  # [[sign,counter],...]  ; m^2*N = [[m,2],[N,1]]
-        self.denominator = []
+        self.numerator = {}  # [[sign,counter],...]  ; m^2*N = [[m,2],[N,1]]
+        self.denominator = {}
 
         if numerator != "":
-            for element in numerator.split(";"):
-                element = element.split("^")
-                if len(element) > 1:
-                    self.numerator.append([element[0], float(element[1])])
-                else:
-                    self.numerator.append([element[0], 1])
+            num = [element.split("^") if "^" in element else [element, 1] for element in numerator.split(";")]
+            self.numerator = {element[0]: float(element[1]) for element in num}
 
         if denominator != "":
-            for element in denominator.split(";"):
-                element = element.split("^")
-                if len(element) > 1:
-                    self.denominator.append([element[0], float(element[1])])
-                else:
-                    self.denominator.append([element[0], 1])
+            den = [element.split("^") if "^" in element else [element, 1] for element in denominator.split(";")]
+            self.denominator = {element[0]: float(element[1]) for element in den}
 
         self.__ease()
 
@@ -54,13 +45,15 @@ class Unit:
         elif not self.numerator and self.denominator:
             unit_strings = ["1"]
         else:
-            numerator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in self.numerator]
+            numerator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in
+                         self.numerator.items()]
             units = [f"{unit}" if 1 == power else f"{unit}^{power}" for unit, power in numerator]
             unit_strings = ["*".join(units)]
 
         if self.denominator:
-            denominator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in self.denominator]
-            units= [f"{unit}" if 1 == power else f"{unit}^{power}" for unit, power in denominator]
+            denominator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in
+                           self.denominator.items()]
+            units = [f"{unit}" if 1 == power else f"{unit}^{power}" for unit, power in denominator]
             unit_strings.append("*".join(units))
 
         string = "/".join([f"({units})" if units.count("*") else f"{units}" for units in unit_strings])
@@ -79,29 +72,17 @@ class Unit:
         denominator = deepcopy(self.denominator)
         numerator = deepcopy(self.numerator)
 
-        other_denominator = deepcopy(other.denominator)
-        other_numerator = deepcopy(other.numerator)
-
-        signs = [element[0] for element in self.denominator]
-
-        for element in other_denominator:
-            if signs.count(element[0]) > 0:
-                for index, sign in enumerate(signs):
-                    if sign == element[0]:
-                        break
-                denominator[index][1] += element[1]
+        for unit in other.denominator.keys():
+            if unit in denominator:
+                denominator[unit] += other.denominator[unit]
             else:
-                denominator.append(element)
+                denominator[unit] = other.denominator[unit]
 
-        signs = [element[0] for element in self.numerator]
-        for element in other_numerator:
-            if signs.count(element[0]) > 0:
-                for index, sign in enumerate(signs):
-                    if sign == element[0]:
-                        break
-                numerator[index][1] += element[1]
+        for unit in other.numerator.keys():
+            if unit in numerator:
+                numerator[unit] += other.numerator[unit]
             else:
-                numerator.append(element)
+                numerator[unit] = other.numerator[unit]
 
         result = Unit()
         result.numerator = numerator
@@ -117,16 +98,16 @@ class Unit:
         :return: Unit = former unit power given int
         """
 
-        denominator = deepcopy(self.denominator)
-        numerator = deepcopy(self.numerator)
-        signs = [element[0] for element in self.denominator]
-
         if type(other) != float and type(other) != int:
             raise ValueError("Power with %s is not defined")
-        for element in numerator:
-            element[1] *= other
-        for element in denominator:
-            element[1] *= other
+
+        denominator = deepcopy(self.denominator)
+        numerator = deepcopy(self.numerator)
+
+        for unit in denominator.keys():
+            denominator[unit] *= other
+        for unit in numerator.keys():
+            numerator[unit] *= other
 
         result = Unit()
         result.numerator = numerator
@@ -143,70 +124,38 @@ class Unit:
         """
 
         type_check((other, Unit))
-
-        denominator = deepcopy(self.denominator)
-        numerator = deepcopy(self.numerator)
-
-        other_denominator = deepcopy(other.denominator)
-        other_numerator = deepcopy(other.numerator)
-
-        signs = [element[0] for element in self.denominator]
-
-        for element in other_numerator:
-            if signs.count(element[0]) > 0:
-                for index, sign in enumerate(signs):
-                    if sign == element[0]:
-                        break
-                denominator[index][1] += element[1]
-            else:
-                denominator.append(deepcopy(element))
-
-        signs = [element[0] for element in self.numerator]
-        for element in other_denominator:
-            if signs.count(element[0]) > 0:
-                for index, sign in enumerate(signs):
-                    if sign == element[0]:
-                        break
-                numerator[index][1] += element[1]
-            else:
-                numerator.append(deepcopy(element))
-
-        result = Unit()
-        result.numerator = numerator
-        result.denominator = denominator
-        result.__ease()
-        return result
+        inv_other = other.flip()
+        return self * inv_other
 
     def __ease(self):
         """
         Simplifies the current given units. For example m * s / m -> s
         :return: void
         """
-        num_sign = [element[0] for element in self.numerator]
-        den_sign = [element[0] for element in self.denominator]
+        num_keys = tuple(self.numerator.keys())
+        den_keys = tuple(self.denominator.keys())
 
-        for num_i, num_element in enumerate(num_sign):
+        # shorten fracture
+        for unit in num_keys:
+            if unit in self.denominator:
+                min_power = min(self.denominator[unit], self.numerator[unit])
+                self.denominator[unit] -= min_power
+                self.numerator[unit] -= min_power
 
-            if den_sign.count(num_element) > 0:
-                for den_i, den_element in enumerate(den_sign):
-                    if den_element == num_element:
-                        break
+        # eliminate zeros
+        for unit in num_keys:
+            if self.numerator[unit] == 0:
+                del self.numerator[unit]
+            elif self.numerator[unit] < 0:
+                self.denominator[unit] = -1 * self.numerator[unit]
+                del self.numerator[unit]
 
-                while self.denominator[den_i][1] > 0 and self.numerator[num_i][1] > 0:
-                    self.numerator[num_i][1] -= 1
-                    self.denominator[den_i][1] -= 1
-
-        for element in self.numerator:
-            if element[1] < 0:
-                self.denominator.append([element[0], -element[1]])
-                self.numerator.remove(element)
-        self.numerator = [element for element in self.numerator if element[1] != 0]
-
-        for element in self.denominator:
-            if element[1] < 0:
-                self.numerator.append([element[0], -element[1]])
-                self.denominator.remove(element)
-        self.denominator = [element for element in self.denominator if element[1] != 0]
+        for unit in den_keys:
+            if self.denominator[unit] == 0:
+                del self.denominator[unit]
+            elif self.denominator[unit] < 0:
+                self.numerator[unit] = -1 * self.denominator[unit]
+                del self.denominator[unit]
 
         return True
 
@@ -218,16 +167,7 @@ class Unit:
         :return: bool
         """
         if type_check((other, Unit)):
-            den1 = deepcopy(self.denominator)
-            den1.sort()
-            den2 = deepcopy(other.denominator)
-            den2.sort()
-            nom1 = deepcopy(self.numerator)
-            nom1.sort()
-            nom2 = deepcopy(other.numerator)
-            nom2.sort()
-
-            if den1 == den2 and nom1 == nom2:
+            if self.denominator == other.denominator and self.numerator == other.numerator:
                 return True
             else:
                 return False

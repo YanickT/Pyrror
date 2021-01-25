@@ -40,18 +40,17 @@ class Table(object):
     def __str__(self):
         """
         Method to show a Table-Object
-        :return: Table as string formated
+        :return: str = Table as string formatted
         """
+        # + 3 for " [" and "]", +4 for additional space
         width = [len(self.column_names[i]) + len(str(self.units[i])) + 3 + 4 if len(str(self.units[i])) > 0\
                  else len(self.column_names[i]) + 4 for i in range(self.columns)]
-        # die + 3 kommen aus " [" und "]". Die +4 sind ein zusätzlicher Abstand
-        # Mindestbreite jeder Spalte
 
+        # check if a bigger column is necessary
         for column in range(self.columns):
             col_data = [data[column - 1] for data in self.datas]
             for slot_data in col_data:
                 width[column - 1] = max(len(str(slot_data)) + 4, width[column - 1])
-        #überprüfen ob ein Datensatz eine größere Spalte braucht
 
         string = ""
         for index, column_name in enumerate(self.column_names):
