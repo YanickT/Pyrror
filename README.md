@@ -34,3 +34,11 @@ unit_helper.py
 formula.py
 data.py
 controls.py
+
+# TODO:
+README
+table_helper (export & import tables)
+make to python package
+
+# FIXME:
+Covariant Matrix has problem with error
