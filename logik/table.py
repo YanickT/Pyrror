@@ -165,6 +165,7 @@ class Table(object):
         :param data_tuple: Tuple[Optional[int, float, Const, Data]] data for each column of table
         :return: void
         """
+        # TODO: check for correct data type
         type_tuple = type(data_tuple)
 
         if type_tuple == list:

@@ -1,4 +1,13 @@
+import math
+
+
 def digits(error):
+    """
+    Calculates the number of significant digits
+    :param error: Union[float, int, str] = uncertainty of a Data
+    :return: int = number of significant digits
+    """
+
     error_str = str(error)
     lenght = len(error_str)
 
@@ -6,7 +15,7 @@ def digits(error):
         if error_str[index] != "0" and error_str[index] != ".":
             break
         elif index == lenght - 1:
-            raise ArithmeticError("Error '%s' has no digits" % (error_str))
+            raise ArithmeticError(f"Error '{error_str}' has no digits")
 
     if error_str[index:].count("."):
         return lenght - (index + 1)
@@ -15,45 +24,24 @@ def digits(error):
 
 
 def round_data(data):
-    n = data.n
+    """
+    Round a data object to the correct number of significant digits.
+    :param data: Data = Data instance to round
+    :return: void
+    """
 
     value = data.value / (10 ** data.power)
     error = data.error / (10 ** data.power)
+    # determine first (non-zero) digit of error
+    power = math.floor(math.log10(error))
 
-    e_int = int(error)
-    if e_int == 0:
-        e_length = 0
-    else:
-        e_length = len(str(e_int))
+    # round data to correct length
+    error = round(error * 10 ** (- power), data.n - 1)
+    value = round(value * 10 ** (- power), data.n - 1)
+    if value == -0:
+        value = 0
+    data.power += power
 
-    while e_length != 1:
-
-        if e_length == 0:
-            data.power -= 1
-            value *= 10
-            error *= 10
-
-        elif e_length > 1:
-            data.power += 1
-            value /= 10
-            error /= 10
-
-        e_int = int(error)
-        if e_int == 0:
-            e_length = 0
-        else:
-            e_length = len(str(e_int))
-
-    if n - 1 > 0:
-        if value >= 0:
-            data.value = round(value, n - 1) * 10 ** data.power
-        else:
-            data.value = -1 * round(-1 * value, n - 1) * 10 ** data.power
-        data.error = round(error, n - 1) * 10 ** data.power
-    else:
-        if value >= 0:
-            data.value = int(value + 0.5) * 10 ** data.power
-        else:
-            data.value = int(value - 0.5) * 10 ** data.power
-        data.error = int(error + 0.5) * 10 ** data.power
-    return True
+    # update the value and error in the Data
+    data.error = error * 10 ** data.power
+    data.value = value * 10 ** data.power

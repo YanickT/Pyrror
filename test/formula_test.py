@@ -49,6 +49,7 @@ class MyTestCase(unittest.TestCase):
         f1 = Formula("x - y")
 
         self.assertEqual("%s" % (f1.calc({"x": d1, "y": d1})), "(0±3)")
+
         self.assertEqual("%s" % (f1.calc({"x": d1, "y": d2})), "(0±3)")
         self.assertEqual("%s" % (f1.calc({"x": d1, "y": d3})), "(7±3)")
         self.assertEqual("%s" % (f1.calc({"x": d1, "y": d4})), "(2±3)")

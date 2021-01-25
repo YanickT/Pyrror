@@ -11,9 +11,10 @@ class Unit:
     def __init__(self, numerator="", denominator=""):  # numerator = "m;N" , denominator = "s^2;N"  => m/s^2
         """
         Initialize a unit. Units are given in the following format:
-        S := '"' units '"'
-        units := unit | unit ';' units
-        unit := string | string '^' integer
+            **sign-EBNF:**
+            S := '"' units '"'
+            units := unit | unit ';' units
+            unit := string | string '^' integer
         :param numerator: string = unit constructed as shown in grammar
         :param denominator:string = unit constructed as shown in grammar
         """

@@ -58,11 +58,12 @@ class Formula:
         :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
         :return: sympy expression of the formula
         """
+
         dummy = {"Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
         for key in type_dict:
-            exec("%s = Symbol('%s')" % (key, key), dummy)
-        exec("formula = %s" % self.formula_string, dummy)
+            exec(f"{key} = Symbol('{key}')", dummy)
+        exec(f"formula = {self.formula_string}", dummy)
         return dummy["formula"]
 
     @instancemethod
@@ -72,17 +73,18 @@ class Formula:
         :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
         :return: sympy expr = formula for the error
         """
+
         dummy = {"error_f": 0, "formula": self.__create_formula(type_dict), "Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
 
         for key in type_dict:
-            exec("%s = Symbol('%s')" % (key, key), dummy)
+            exec(f"{key} = Symbol('{key}')", dummy)
 
         for key, var_type in type_dict.items():
             if var_type == Data:
                 d_key = "__delta__" + key
-                exec("%s = Symbol('%s')" % (d_key, d_key), dummy)
-                exec("error_f += (%s)**2 * (formula.diff(%s))**2" % (d_key, key), dummy)
+                exec(f"{d_key} = Symbol('{d_key}')", dummy)
+                exec(f"error_f += ({d_key})**2 * (formula.diff({key}))**2", dummy)
 
         return sympy.sqrt(dummy["error_f"])
 
@@ -94,6 +96,7 @@ class Formula:
         :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
         :return: sympy expr = result in form of a sympy expression
         """
+
         dummy = {"result": self.__create_formula(type_dict), "Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
 
@@ -103,8 +106,8 @@ class Formula:
             else:
                 value = value_dict[key].value
 
-            exec("%s = Symbol('%s')" % (key, key), dummy)
-            exec("result = result.subs('%s',%s)" % (key, value), dummy)
+            exec(f"{key} = Symbol('{key}')", dummy)
+            exec(f"result = result.subs('{key}',{value})", dummy)
 
         return dummy["result"]
 
@@ -116,6 +119,7 @@ class Formula:
         :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
         :return: sympy expr = sympy expresion of the calculated error
         """
+
         dummy = {"error": self.__create_error_f(type_dict), "Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
 
@@ -129,10 +133,10 @@ class Formula:
                 if type_dict[key] == Data:
                     error_value = value_dict[key].error
                     d_key = "__delta__" + key
-                    exec("%s = Symbol('%s')" % (d_key, d_key), dummy)
-                    exec("error = error.subs(%s, %s)" % (d_key, error_value), dummy)
-            exec("%s = Symbol('%s')" % (key, key), dummy)
-            exec("error = error.subs(%s, %s)" % (key, value), dummy)
+                    exec(f"{d_key} = Symbol('{d_key}')", dummy)
+                    exec(f"error = error.subs({d_key}, {error_value})", dummy)
+            exec(f"{key} = Symbol('{key}')", dummy)
+            exec(f"error = error.subs({key}, {value})", dummy)
 
         return dummy["error"]
 
@@ -154,15 +158,15 @@ class Formula:
                 denominator = value_dict[key].unit.denominator
 
                 for unit in numerator.keys():
-                    exec("%s = Symbol('%s')" % (unit, unit), dummy)
-                    exec("cur_unit *= %s ** %s" % (unit, numerator[unit]), dummy)
+                    exec(f"{unit} = Symbol('{unit}')", dummy)
+                    exec(f"cur_unit *= {unit} ** {numerator[unit]}", dummy)
 
                 for unit in denominator.keys():
-                    exec("%s = Symbol('%s')" % (unit, unit), dummy)
-                    exec("cur_unit /= (%s ** %s)" % (unit, denominator[unit]), dummy)
+                    exec(f"{unit} = Symbol('{unit}')", dummy)
+                    exec(f"cur_unit /= ({unit} ** {denominator[unit]})", dummy)
 
-            exec("%s = Symbol('%s')" % (key, key), dummy)
-            exec("unit = unit.subs(%s,cur_unit)" % key, dummy)
+            exec(f"{key} = Symbol('{key}')", dummy)
+            exec(f"unit = unit.subs({key},cur_unit)", dummy)
             dummy["cur_unit"] = 1
 
         units = self.__get_units(sympy.nsimplify(dummy["unit"]))
@@ -190,6 +194,7 @@ class Formula:
         :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
         :return: Tuple[str, str] = (formula, error formula)
         """
+
         formula = self.__create_formula(type_dict)
         error_f = self.__create_error_f(type_dict)
         return latex(formula), latex(error_f)
@@ -200,6 +205,7 @@ class Formula:
         Give a string representation of the formula.
         :return: str = representation of the formula
         """
+
         return self.formula_string
 
     @instancemethod
@@ -209,6 +215,7 @@ class Formula:
         :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable.
         :return: str = pretty version of the formula for the error
         """
+
         error_f = self.__create_error_f(type_dict)
         formula = self.__create_formula(type_dict)
 
