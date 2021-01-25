@@ -1,4 +1,4 @@
-from logik.controlls import type_check, instancemethod
+from logik.controls import type_check, instancemethod
 from logik.unit_helper import unit_control
 from logik.data_helper import round_data, digits
 from logik.unit import Unit
@@ -18,22 +18,10 @@ class Data:
         :param value: str = value
         :param error: str = uncertainty
         :param sign: Union[str, Unit] = unit of the value
-        if sign is a string:
-         there are different rules for more complex dimensions. They are also described in the Unit class only "/" not:
-            #. powered dimensions have the form of  sign = dimension_syombol '^' power. *Attention: power >= 0*!
-               Example: Area = m^2
-            #. mixed dimensions are separated by ';'.
-               Example: torque: = N;m
-            #. fractions are created by a '/'. *There can only apper one '/' in each sign*. If a dimension appears left
-               to an '/' it is count to the numerator. If it appears to the right its part of the denominator.
-               Example: speed: m/s or acceleration: m/s^2
-
             **sign-EBNF:**
-            string = (* normal string *)
-            number = (* str of normal float *)
-            dimension = string | string, '^', number | string, ';', string
-            sign = dimension | dimension, '/', dimension;
-
+            S := '"' units '"' | '"' units '/' units '"'
+            units := unit | unit ';' units
+            unit := string | string '^' integer
         :param power: int = power of the value (for dimensions like mV => power = -3 and unit = 'V')
         :param n: int = significant digits of the error (if 0  (Default): get digits from error: str)
         """
@@ -61,36 +49,66 @@ class Data:
         round_data(self)
 
     def __str__(self):
+        """
+        Return a string representation of the Data.
+        :return: str = string representation of the Data
+        """
+
+        # insert values
         if self.n > 1:
-            element = "(%." + "%s" % (self.n - 1) + "f±%." + "%s" % (self.n - 1) + "f)"
-            string = element % (self.value * 10 ** (-self.power), self.error * (10 ** -self.power))
+            string = f"({self.value * 10 ** (-self.power):.{(self.n - 1)}f}±{self.error * (10 ** -self.power):.{(self.n - 1)}f})"
         elif self.n == 1:
-            string = "(%i±%i)" % (self.value * 10 ** (-self.power), self.error * (10 ** -self.power))
+            string = f"({self.value * 10 ** (-self.power):.0f}±{self.error * (10 ** -self.power):.0f})"
         else:
             raise ValueError("n could not be smaller than 1")
-        if self.power != 0:
-            string += "*10^%s" % self.power
 
-        unit_string = str(self.unit)
-        if unit_string != "":
-            string += " " + unit_string
+        # add power
+        if self.power != 0:
+            string += f"*10^{self.power}"
+
+        # add unit
+        unit = str(self.unit)
+        if unit != "":
+            string += f" {unit}"
 
         return string
 
-    # Rechenoperationen mit Fehler nach vereinfachem Gauß
-
-    """Multiplikation"""
+    # Calculations using simplified gauss
 
     def __int_mul(self, other):
+        """
+        Helper function of multiplication of Data with int.
+        :param other: int = Integer to multiplicative Data with
+        :return: Data = result of the multiplication
+        """
+
         return Data(str(self.value * other), str(self.error * other), sign=self.unit, n=self.n)
 
     def __float_mul(self, other):
+        """
+        Helper function of multiplication of Data with float.
+        :param other: float = Float to multiplicative Data with
+        :return: Data = result of the multiplication
+        """
+
         return Data(str(self.value * other), str(self.error * other), sign=self.unit, n=self.n)
 
     def __const_mul(self, other):
+        """
+        Helper function of multiplication of Data with Const.
+        :param other: Const = Const to multiplicative Data with
+        :return: Data = result of the multiplication
+        """
+
         return Data(str(self.value * other.value), str(self.error * other.value), sign=self.unit * other.unit, n=self.n)
 
     def __data_mul(self, other):
+        """
+        Helper function of multiplication of two Data.
+        :param other: Data = The other Data to multiplicative Data with
+        :return: Data = result of the multiplication
+        """
+
         result = self.value * other.value
         error = str(result * ((self.error / self.value) ** 2 + (other.error / other.value) ** 2) ** 0.5)
         significant_digits = min(self.n, other.n)
@@ -99,28 +117,37 @@ class Data:
         return Data(result, error, sign=unit, n=significant_digits)
 
     @instancemethod
-    def __mul__(self, other):  # multiplikation
+    def __mul__(self, other):
+        """
+        Multiplication of Data object with other. Which will happen depend on the type of other.
+        :param other: Union[Data, Const, int, float] = Object to multiply with
+        :return: Data = result of the multiplication
+        """
         type_other = type(other)
         functions = {int: self.__int_mul, float: self.__float_mul, Const: self.__const_mul, Data: self.__data_mul}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '*' for Data and %s" % type_other)
+
+        if type_other not in functions:
+            raise ValueError("Unsupported operation '*' for Data and {type(other)}")
+
+        return functions[type_other](other)
 
     @instancemethod
     def __rmul__(self, other):
-        type_other = type(other)
-        functions = {int: self.__int_mul, float: self.__float_mul, Const: self.__const_mul, Data: self.__data_mul}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '*' for Data and %s" % type_other)
-
-    """Multiplikation"""
-    """Addition"""
+        """
+        Multiplication of Data object with other. Which will happen depend on the type of other.
+        :param other: Union[Data, Const, int, float] = Object to multiply with
+        :return: Data = result of the multiplication
+        """
+        return self.__mul__(other)
 
     @unit_control
     def __data_add(self, other):
+        """
+        Helper function for addition of two Data.
+        :param other: Data = other Data to add with Data
+        :return: Data = result of the addition
+        """
+
         result = self.value + other.value
         significant_digits = min(self.n, other.n)
         error = str((self.error ** 2 + other.error ** 2) ** 0.5)
@@ -129,19 +156,26 @@ class Data:
         return Data(result, error, n=significant_digits, sign=unit)
 
     @instancemethod
-    def __add__(self, other):  # Addition
-        type_other = type(other)
-        functions = {Data: self.__data_add}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '+' for Data and %s" % type_other)
+    def __add__(self, other):
+        """
+        Addition of two Data objects.
+        :param other: Data = other Data to add with Data
+        :return: Data = result of the addition
+        """
 
-    """Addition"""
-    """Subtraktion"""
+        if not isinstance(other, Data):
+            raise ValueError(f"Unsupported operation '+' for Data and {type(other)}")
+
+        return self.__data_add(other)
 
     @unit_control
     def __data_sub(self, other):
+        """
+        Helper function for subtraction of two Data.
+        :param other: Data = other Data to subtract with Data
+        :return: Data = result of the subtraction
+        """
+
         result = self.value - other.value
         significant_digits = min(self.n, other.n)
         error = str((self.error ** 2 + other.error ** 2) ** 0.5)
@@ -151,23 +185,42 @@ class Data:
 
     @instancemethod
     def __sub__(self, other):
-        type_other = type(other)
-        functions = {Data: self.__data_sub}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '-' for Data and %s" % type_other)
+        """
+        Subtraction of two Data objects.
+        :param other: Data = other Data to subtract with Data
+        :return: Data = result of the subtraction
+        """
 
-    """Subtraktion"""
-    """Division"""
+        if not isinstance(other, Data):
+            raise ValueError(f"Unsupported operation '-' for Data and {type(other)}")
+
+        return self.__data_sub(other)
 
     def __int_div(self, other):
+        """
+        Helper function of division of Data with int.
+        :param other: int = Integer to divide Data with
+        :return: Data = result of division
+        """
+
         return Data(str(self.value / other), str(self.error / other), sign=self.unit, n=self.n)
 
     def __float_div(self, other):
+        """
+        Helper function of division of Data with float.
+        :param other: float = Float to divide Data with
+        :return: Data = result of division
+        """
+
         return Data(str(self.value / other), str(self.error / other), sign=self.unit, n=self.n)
 
     def __const_div(self, other):
+        """
+        Helper function of division of Data with Const.
+        :param other: Const = Const to divide Data with
+        :return: Data = result of division
+        """
+
         result = str(self.value / other.value)
         unit = self.unit / other.unit
         error = str(self.error / other.value)
@@ -175,6 +228,12 @@ class Data:
         return Data(result, error, sign=unit, n=significant_digits)
 
     def __data_div(self, other):
+        """
+        Helper function of division of Data with Data.
+        :param other: Data = Data to divide Data with
+        :return: Data = result of division
+        """
+
         result = self.value / other.value
         significant_digits = min(self.n, other.n)
         error = str(result * ((self.error / self.value) ** 2 + (other.error / other.value) ** 2) ** 0.5)
@@ -183,28 +242,42 @@ class Data:
         return Data(result, error, sign=unit, n=significant_digits)
 
     @instancemethod
-    def __truediv__(self, other):  # Division
+    def __truediv__(self, other):
+        """
+        Division of a Data object with other.
+        :param other: Union[Data, Const, int, float] = object to divide with
+        :return: Data = result of the division
+        """
+
         type_other = type(other)
         functions = {int: self.__int_div, float: self.__float_div, Const: self.__const_div, Data: self.__data_div}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '/' for Data and %s" % type_other)
+        if type_other not in functions:
+            raise ValueError(f"Unsupported operation '/' for Data and {type_other}")
+
+        return functions[type_other](other)
 
     @instancemethod
     def __rtruediv__(self, other):
+        """
+        Division of a Data object with other.
+        :param other: Union[int, float] = object to divide with
+        :return: Data = result of the division
+        """
         typ_other = type(other)
         if typ_other == int or typ_other == float:
             result = other / self.value
             unit = self.unit.flip()
             return Data(str(result), str(result * (self.error / self.value)), sign=unit, n=self.n)
         else:
-            raise ValueError("Unsupported operation '/' for Data and %s" % typ_other)
+            raise ValueError(f"Unsupported operation '/' for Data and {typ_other}")
 
-    """"Division"""
-    """Potenz"""
+    def __pow__(self, other):
+        """
+        Power of a Data object with other.
+        :param other: Union[int, float] = object to power with
+        :return: Data = result of the calculation
+        """
 
-    def __pow__(self, other):  # Potenz
         typ_other = type(other)
         if typ_other == int or typ_other == float:
             result = self.value ** other
@@ -213,98 +286,165 @@ class Data:
         elif typ_other == Data:
             raise ArithmeticError("Try to use a Formula instead!")
         else:
-            raise ValueError("Unsupported operation '**' for Data and %s" % typ_other)
+            raise TypeError(f"Unsupported operation '**' for Data and {typ_other}")
 
-    """Potenz"""
-    """Vergleiche"""
+    # Data comparisons
 
     @unit_control
     def __data_lt(self, other):
+        """
+        Helper function of lt comparison of Data with Data.
+        :param other: Data = Data to compare with
+        :return: bool = result of comparison
+        """
+
         return self.value + self.error + other.error < other.value
 
     @unit_control
     def __const_lt(self, other):
+        """
+        Helper function of lt comparison of Data with Const.
+        :param other: Const = Const to compare with
+        :return: bool = result of comparison
+        """
+
         return self.value + self.error < other.value
 
     @instancemethod
-    def __lt__(self, other):  # <
+    def __lt__(self, other):
+        """
+        Compare Data with other objects.
+        :param other: Union[Data, Const] = object to compare with
+        :return: bool = result of comparison
+        """
+
         type_other = type(other)
         functions = {Const: self.__const_lt, Data: self.__data_lt}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '<' for Data and %s" % type_other)
 
-    """--------"""
+        if type_other not in functions:
+            raise ValueError(f"Unsupported operation '<' for Data and {type_other}")
+
+        return functions[type_other](other)
 
     @unit_control
     def __data_eq(self, other):
+        """
+        Helper function of eq comparison of Data with Data.
+        :param other: Data = Data to compare with
+        :return: bool = result of comparison
+        """
+
         return self.value - self.error - other.error <= other.value <= self.value + self.error + other.error
 
     @unit_control
     def __const_eq(self, other):
+        """
+        Helper function of eq comparison of Data with Const.
+        :param other: Const = Const to compare with
+        :return: bool = result of comparison
+        """
+
         return self.value - self.error <= other.value <= self.value + self.error
 
     @instancemethod
-    def __eq__(self, other):  # ==
+    def __eq__(self, other):
+        """
+        Compare Data with other objects.
+        :param other: Union[Data, Const] = object to compare with
+        :return: bool = result of comparison
+        """
+
         type_other = type(other)
         functions = {Const: self.__const_eq, Data: self.__data_eq}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '==' for Data and %s" % type_other)
+        if type_other not in functions:
+            raise ValueError(f"Unsupported operation '==' for Data and {type_other}")
 
-    """--------"""
+        return functions[type_other](other)
 
     @unit_control
     def __data_gt(self, other):
+        """
+        Helper function of gt comparison of Data with Data.
+        :param other: Data = Data to compare with
+        :return: bool = result of comparison
+        """
+
         return self.value - self.error - other.error > other.value
 
     @unit_control
     def __const_gt(self, other):
+        """
+        Helper function of eq comparison of Data with Const.
+        :param other: Const = Const to compare with
+        :return: bool = result of comparison
+        """
+
         return self.value - self.error > other.value
 
     @instancemethod
-    def __gt__(self, other):  # >
+    def __gt__(self, other):
+        """
+        Compare Data with other objects.
+        :param other: Union[Data, Const] = object to compare with
+        :return: bool = result of comparison
+        """
+
         type_other = type(other)
         functions = {Const: self.__const_gt, Data: self.__data_gt}
-        try:
-            return functions[type_other](other)
-        except KeyError:
-            raise ValueError("Unsupported operation '==' for Data and %s" % type_other)
+        if type_other not in functions:
+            raise ValueError(f"Unsupported operation '==' for Data and {type_other}")
 
-    """--------"""
+        return functions[type_other](other)
 
     @instancemethod
-    def __ne__(self, other):  # !=
+    def __ne__(self, other):
+        """
+        Compare Data with other objects.
+        :param other: Union[Data, Const] = object to compare with
+        :return: bool = result of comparison
+        """
+
         return not self.__eq__(other)
 
-    """--------"""
-
     @instancemethod
-    def __ge__(self, other):  # >=
+    def __ge__(self, other):
+        """
+        Compare Data with other objects.
+        :param other: Union[Data, Const] = object to compare with
+        :return: bool = result of comparison
+        """
+
         return self.__gt__(other) or self.__eq__(other)
 
-    """--------"""
-
     @instancemethod
-    def __le__(self, other):  # <=
+    def __le__(self, other):
+        """
+        Compare Data with other objects.
+        :param other: Union[Data, Const] = object to compare with
+        :return: bool = result of comparison
+        """
+
         return self.__lt__(other) or self.__eq__(other)
-
-    """Vergleiche"""
-
-
-# -------------------------------------------------------------------------------------------- #
 
 
 class Const:
+
     """
-    Für die Konstanten z.B. die Lichtgeschwindigkeit oder für ausreichend genaue Datas -> kein Fehler
+    Class for constants and values with units if they carry no uncertainty (or a neglected one).
     """
 
-    def __init__(self, value, sign):  # sign = "m;N/s"; "/s;n"; "N;m"
+    def __init__(self, value, sign):
+        """
+        Initalize a constant with a unit.
+        :param value: Union[int, float] = constant value
+        :param sign: Union[str, Unit] = String carrying the unit.
+        **sign-EBNF:**
+            S := '"' units '"' | '"' units '/' units '"'
+            units := unit | unit ';' units
+            unit := string | string '^' integer
+        """
 
-        if type(sign) == str:
+        if isinstance(sign, str):
             sign = sign.split("/")
             if len(sign) > 1:
                 self.unit = Unit(sign[0], sign[1])
@@ -317,23 +457,36 @@ class Const:
 
     @instancemethod
     def __str__(self):
-        string = "%s" % self.value
+        """
+        Creates a string representation of the Const.
+        :return: str = representation of the Const
+        """
+
+        string = str(self.value)
         unit_string = str(self.unit)
         if unit_string != "":
             string += " " + unit_string
         return string
 
     @instancemethod
-    def __mul__(self, other):  # multiplikation
+    def __mul__(self, other):
+        """
+        Multiplication with other.
+        :param other: Union[Data, Const, int, float] = other object to multiply with
+        :return: Union[Data, Const] = Result type depends on the other object
+        """
+
         type_other = type(other)
         if type_other == int or type_other == float:
             value = self.value * other
             unit = self.unit
             return Const(value, sign=unit)
+
         elif type_other == Const:
             value = self.value * other.value
             unit = self.unit * other.unit
             return Const(value, sign=unit)
+
         elif type_other == Data:
             value = self.value * other.value
             unit = self.unit * other.unit
@@ -341,33 +494,62 @@ class Const:
             error = self.value * other.error
             return Data(str(value), str(error), n=n, sign=unit)
 
+        else:
+            raise TypeError(f"unsupported operand '*' for Const and {type_other}")
+
     @instancemethod
     def __rmul__(self, other):
+        """
+        Multiplication with other.
+        :param other: Union[Data, Const, int, float] = other object to multiply with
+        :return: Union[Data, Const] = result type depends on the other object
+        """
+
         return self.__mul__(other)
 
     @instancemethod
-    def __add__(self, other):  # Addition
+    def __add__(self, other):
+        """
+        Addition with other Const.
+        :param other: Const = other Const to add with
+        :return: Const = result of the subtraction
+        """
+
         if type(other) == Const:
             if self.unit == other.unit:
                 return Const(self.value + other.value, sign=self.unit)
         else:
-            raise TypeError("unsupported operand '+' for Const and %s" % type(other))
+            raise TypeError(f"unsupported operand '+' for Const and {type(other)}")
 
     @instancemethod
     def __sub__(self, other):
+        """
+        Addition with other Const.
+        :param other: Const = other Const to add with
+        :return: Const = result of the subtraction
+        """
+
         return self.__add__(-1 * other)
 
     @instancemethod
-    def __truediv__(self, other):  # Division
+    def __truediv__(self, other):
+        """
+        Division with other object.
+        :param other: Union[Data, Const, int, float] = other object to add with
+        :return: Union[Data, Const] = Result type depends on the other object
+        """
+
         type_other = type(other)
         if type_other == int or type_other == float:
             value = self.value / other
             unit = self.unit
             return Const(value, sign=unit)
+
         elif type_other == Const:
             value = self.value / other.value
             unit = self.unit / other.unit
             return Const(value, sign=unit)
+
         elif type_other == Data:
             value = self.value / other.value
             unit = self.unit / other.unit
@@ -375,18 +557,32 @@ class Const:
             error = self.value / other.error
             return Data(str(value), str(error), n=n, sign=unit)
 
+        else:
+            raise TypeError(f"unsupported operand '*' for Const and {type_other}")
+
     @instancemethod
     def __rtruediv__(self, other):
+        """
+        Division with other object.
+        :param other: Union[int, float] = other object to add with
+        :return: Union[Data, Const] = Result type depends on the other object
+        """
         typ_other = type(other)
         if typ_other == int or typ_other == float:
             result = other / self.value
             unit = self.unit.flip()
             return Const(result, unit)
         else:
-            raise ValueError("Unsupported operation '/' for Const and %s" % typ_other)
+            raise ValueError(f"Unsupported operation '/' for Const and {typ_other}")
 
     @instancemethod
-    def __pow__(self, other):  # Potenz
+    def __pow__(self, other):
+        """
+        Power a Const object
+        :param other: Union[int, float] = object to power with
+        :return: Const = result of the calculation
+        """
+
         typ_other = type(other)
         if typ_other == int or typ_other == float:
             result = self.value ** other
@@ -395,28 +591,76 @@ class Const:
         elif typ_other == Data:
             raise ArithmeticError("Try to use a Formula instead!")
         else:
-            raise ValueError("Unsupported operation '/' for Const and %s" % typ_other)
+            raise TypeError(f"Unsupported operation '/' for Const and {typ_other}")
 
     @unit_control
-    def __lt__(self, other):  # <
-        return self.value < other.value
+    def __lt__(self, other):
+        """
+        Compare Const with other objects.
+        :param other: Const = object to compare with
+        :return: bool = result of comparison
+        """
+
+        if isinstance(other, Const):
+            return self.value < other.value
+        raise TypeError(f"unsupported operation '<' for Data and {type(other)}")
 
     @unit_control
-    def __le__(self, other):  # <=
-        return self.value <= other.value
+    def __le__(self, other):
+        """
+        Compare Const with other objects.
+        :param other: Const = object to compare with
+        :return: bool = result of comparison
+        """
+
+        if isinstance(other, Const):
+            return self.value <= other.value
+        raise TypeError(f"unsupported operation '<=' for Data and {type(other)}")
 
     @unit_control
-    def __eq__(self, other):  # ==
-        return self.value == other.value
+    def __eq__(self, other):
+        """
+        Compare Const with other objects.
+        :param other: Const = object to compare with
+        :return: bool = result of comparison
+        """
+
+        if isinstance(other, Const):
+            return self.value == other.value
+        raise TypeError(f"unsupported operation '==' for Data and {type(other)}")
 
     @unit_control
-    def __ne__(self, other):  # !=
-        return self.value != other.value
+    def __ne__(self, other):
+        """
+        Compare Const with other objects.
+        :param other: Const = object to compare with
+        :return: bool = result of comparison
+        """
+
+        if isinstance(other, Const):
+            return self.value != other.value
+        raise TypeError(f"unsupported operation '!=' for Data and {type(other)}")
 
     @unit_control
-    def __ge__(self, other):  # >=
-        return self.value >= other.value
+    def __ge__(self, other):
+        """
+        Compare Const with other objects.
+        :param other: Const = object to compare with
+        :return: bool = result of comparison
+        """
+
+        if isinstance(other, Const):
+            return self.value >= other.value
+        raise TypeError(f"unsupported operation '>=' for Data and {type(other)}")
 
     @unit_control
-    def __gt__(self, other):  # >
-        return self.value > other.value
+    def __gt__(self, other):
+        """
+        Compare Const with other objects.
+        :param other: Const = object to compare with
+        :return: bool = result of comparison
+        """
+
+        if isinstance(other, Const):
+            return self.value > other.value
+        raise TypeError(f"unsupported operation '>' for Data and {type(other)}")

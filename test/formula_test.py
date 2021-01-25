@@ -67,8 +67,8 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(str(f1.calc({"x": d7, "y": d10})), "(1.0±1.4) m")
         self.assertEqual(str(f1.calc({"x": d9, "y": d7})), "(1.0±1.4) (J*m)/s")
 
-        f2 = Formula("x * y / u")
-        self.assertEqual(str(f1.calc({"x": d8, "y": d9, "z": d7, "u": d10})), "(1.0±1.4)")
+        f2 = Formula("x * y / u / z**2")
+        self.assertEqual(str(f2.calc({"x": d8, "y": d9, "z": d7, "u": d10})), "(1.0±2.6)")
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 from logik.data import Data, Const
 from logik.unit import Unit
-from logik.controlls import instancemethod
+from logik.controls import instancemethod
 
 from sympy import Symbol, pretty, latex
 import sympy
@@ -67,6 +67,11 @@ class Formula:
 
     @instancemethod
     def __create_error_f(self, type_dict):
+        """
+        Creates the function to calculate the error. This depend on the types of parameters and variables given.
+        :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
+        :return: sympy expr = formula for the error
+        """
         dummy = {"error_f": 0, "formula": self.__create_formula(type_dict), "Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
 
@@ -83,6 +88,12 @@ class Formula:
 
     @instancemethod
     def __calc_result(self, value_dict, type_dict):
+        """
+        Calculate the result using the given formula.
+        :param value_dict: Dict[str: Union[int, float, Data, Const]] = Dict of the variables for the formula
+        :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
+        :return: sympy expr = result in form of a sympy expression
+        """
         dummy = {"result": self.__create_formula(type_dict), "Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
 
@@ -99,6 +110,12 @@ class Formula:
 
     @instancemethod
     def __calc_error(self, value_dict, type_dict):
+        """
+        Determine the error for the given function and values.
+        :param value_dict: Dict[str: Union[int, float, Data, Const]] = Dict of the variables for the formula
+        :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
+        :return: sympy expr = sympy expresion of the calculated error
+        """
         dummy = {"error": self.__create_error_f(type_dict), "Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
 
@@ -197,7 +214,7 @@ class Formula:
 
         string = ""
         string += "Formel:\n"
-        string += pretty(formula)#, use_unicdoe=False)
+        string += pretty(formula)
         string += "\nFehlerformel nach Gauss:\n"
         string += pretty(error_f)
         return string

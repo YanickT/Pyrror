@@ -1,4 +1,4 @@
-from logik.controlls import type_check, instancemethod
+from logik.controls import type_check, instancemethod
 from copy import deepcopy
 
 
@@ -11,8 +11,8 @@ class Unit:
     def __init__(self, numerator="", denominator=""):  # numerator = "m;N" , denominator = "s^2;N"  => m/s^2
         """
         Initialize a unit. Units are given in the following format:
-        S := units | units '/' units
-        units := unit | unit ';' unit
+        S := '"' units '"'
+        units := unit | unit ';' units
         unit := string | string '^' integer
         :param numerator: string = unit constructed as shown in grammar
         :param denominator:string = unit constructed as shown in grammar
@@ -43,21 +43,30 @@ class Unit:
         if not self.numerator and not self.denominator:
             return ""
         elif not self.numerator and self.denominator:
-            unit_strings = ["1"]
+            num = "1"
         else:
             numerator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in
                          self.numerator.items()]
             units = [f"{unit}" if 1 == power else f"{unit}^{power}" for unit, power in numerator]
-            unit_strings = ["*".join(units)]
+            num = '*'.join(units)
 
         if self.denominator:
             denominator = [(unit, int(power)) if power == int(power) else (unit, power) for unit, power in
                            self.denominator.items()]
             units = [f"{unit}" if 1 == power else f"{unit}^{power}" for unit, power in denominator]
-            unit_strings.append("*".join(units))
+            if len(units) == 1:
+                den = units[0]
+            else:
+                den = f"({'*'.join(units)})"
 
-        string = "/".join([f"({units})" if units.count("*") else f"{units}" for units in unit_strings])
-        return string
+        if self.numerator and not self.denominator:
+            return num
+        elif not self.numerator and self.denominator:
+            return f"1/{den}"
+        elif num.count("*") > 0:
+            return f"({num})/{den}"
+        else:
+            return f"{num}/{den}"
 
     @instancemethod
     def __mul__(self, other):

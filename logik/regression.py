@@ -4,7 +4,7 @@ import sympy
 from logik.data import Data, Const
 from logik.formula import Formula
 from logik.table import Table
-from logik.controlls import type_check
+from logik.controls import type_check
 from abc import ABC, abstractmethod
 from logik.chi_2 import Chi2
 
