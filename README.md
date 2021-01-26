@@ -33,12 +33,15 @@ TODO: table.py
 README
 table_helper (export & import tables)
 make to python package
-chi_2.py chi2 calculation is incorrect
 Tests for chi_2
 Tests for regression
 Improve Tests
 
 # FIXME:
-Covariant Matrix has problem with error
+chi_2.py chi2 calculation is incorrect
+
+Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)
+
+
 Data should format in such a way, that the mean value is given by 1,...
 not the error

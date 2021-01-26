@@ -47,15 +47,15 @@ class Chi2:
 
             if isinstance(x, (Const, Data)):
                 x = x.value
-            if isinstance(y, (Const, Data)):
-                y = y.value
+            if not isinstance(y, (Const, Data)):
+                print("geht nicht muss noch geändert werden")
 
             y_theo = self.reg.calc(x)
             if isinstance(y_theo, (Const, Data)):
                 y_theo = y_theo.value
 
-            self.residues.append((x, y - y_theo))
-            self.chi2 += (y - y_theo) ** 2 / y_theo
+            self.residues.append((x, y.value - y_theo))
+            self.chi2 += ((y.value - y_theo) / y.error)**2
         
         self.probability = stats.chi2.sf(self.chi2, degree_of_freedom)
         self.chi_red = self.chi2 / degree_of_freedom

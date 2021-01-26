@@ -208,8 +208,8 @@ class GaussRegression(Regression):
         # slope
         self.b = Data(str(b_value), str(b_error), n=2, sign=unit)
 
-        self.chi2 = Chi2(self)
         self.f = Formula("a+b*x")
+        self.chi2 = Chi2(self)
 
     def __str__(self):
         """
@@ -226,7 +226,7 @@ class GaussRegression(Regression):
         :return: Union[float, int] = f(x)
         """
 
-        if isinstance(x, (int, float)):
+        if not isinstance(x, (int, float)):
             raise TypeError(f"get unexpected type '{type(x)}'. Try int or float instead")
 
         data = self.f.calc({"a": self.a, "b": self.b, "x": x})
@@ -353,7 +353,7 @@ class CovRegression(Regression):
                 self.dummy["__alpha__"] = 0
                 for row in self.tab.datas:
                     x = row[x_pos].value if isinstance(row[x_pos], (Const, Data)) else row[x_pos]
-                    exec(f"__alpha_f__ = (1 / {row[y_pos].error})**2 * ({expr}) * ({expr_2}) * sympy.core.numbers.One()",
+                    exec(f"__alpha_f__ = (1 / ({row[y_pos].error}))**2 * ({expr}) * ({expr_2}) * sympy.core.numbers.One()",
                          self.dummy)
                     exec(f"__alpha__ += __alpha_f__.subs(x, {x})", self.dummy)
 
@@ -432,10 +432,24 @@ class CovRegression(Regression):
 if __name__ == "__main__":
     from logik.table import Table
     from random import randint as rand
+    import random
 
+    y = lambda x: 3*x + 4
+    import numpy as np
+    y_ = np.vectorize(y)
+    xs = np.linspace(0, 10, 1000)
+    ys = y_(xs) + np.random.normal(0, 0.2, 1000)
+    ys = [Data(str(float(e)), "0.2") for e in ys.tolist()]
 
-    def gauss(x_max):
-        return sum(rand(-10, 10) for i in range(5)) / 50 * x_max
+    tab = Table(columns=2, column_names=["x", "y"])
+    for x, y in zip(xs.tolist(), ys):
+        tab.add((x, y))
+    print(tab)
+    a = GaussRegression(tab, {"x":0, "y": 1})
+    print(a)
+    a.residues()
+    print("\n\n\n")
+    exit()
 
 
     data = [
