@@ -123,11 +123,12 @@ class Data:
         :param other: Union[Data, Const, int, float] = Object to multiply with
         :return: Data = result of the multiplication
         """
+
         type_other = type(other)
         functions = {int: self.__int_mul, float: self.__float_mul, Const: self.__const_mul, Data: self.__data_mul}
 
         if type_other not in functions:
-            raise ValueError("Unsupported operation '*' for Data and {type(other)}")
+            raise ValueError(f"Unsupported operation '*' for Data and {type(other)}")
 
         return functions[type_other](other)
 
@@ -155,18 +156,55 @@ class Data:
         result = str(result)
         return Data(result, error, n=significant_digits, sign=unit)
 
-    @instancemethod
-    def __add__(self, other):
+    def __number_add(self, other):
         """
-        Addition of two Data objects.
-        :param other: Data = other Data to add with Data
+        Helper function for addition of a Data and an Union[int, float].
+        :param other: Union[int, float] = value to add
         :return: Data = result of the addition
         """
 
-        if not isinstance(other, Data):
-            raise ValueError(f"Unsupported operation '+' for Data and {type(other)}")
+        if self.unit == Unit(""):
+            return Data(str(self.value + other), str(self.error), n=self.n, power=self.power)
 
-        return self.__data_add(other)
+    @unit_control
+    def __const_add(self, other):
+        """
+        Helper function for addition of a Data and an Const.
+        :param other: Const = value to add
+        :return: Data = result of the addition
+        """
+
+        result = self.value + other.value
+        significant_digits = min(self.n, other.n)
+        unit = self.unit
+        result = str(result)
+        return Data(result, self.error, n=self.n, sign=unit)
+
+    @instancemethod
+    def __add__(self, other):
+        """
+        Addition of a Data and other.
+        :param other: Union[Data, Const, int, float] = Object to add with
+        :return: Data = result of the addition
+        """
+
+        type_other = type(other)
+        functions = {int: self.__number_add, float: self.__number_add, Const: self.__const_add, Data: self.__data_add}
+
+        if type_other not in functions:
+            raise ValueError("Unsupported operation '+' for Data and {type(other)}")
+
+        return functions[type_other](other)
+
+    @instancemethod
+    def __radd__(self, other):
+        """
+        Addition of a Data and other.
+        :param other: Union[Data, Const, int, float] = Object to add with
+        :return: Data = result of the addition
+        """
+
+        return self.__number_add(other)
 
     @unit_control
     def __data_sub(self, other):
@@ -183,6 +221,26 @@ class Data:
         result = str(result)
         return Data(result, error, sign=unit, n=significant_digits)
 
+    def __number_sub(self, other):
+        """
+        Helper function for subtraction of a Data and an Union[int, float].
+        :param other: Union[int, float] = value to subtract
+        :return: Data = result of the subtraction
+        """
+
+        if self.unit == Unit(""):
+            return Data(str(self.value - other), str(self.error), n=self.n, power=self.power)
+
+    @unit_control
+    def __const_sub(self, other):
+        """
+        Helper function for subtraction of a Data and an Const.
+        :param other: Const = value to subtract
+        :return: Data = result of the subtraction
+        """
+
+        return Data(str(self.value - other.value), str(self.error), n=self.n, sign=self.unit)
+
     @instancemethod
     def __sub__(self, other):
         """
@@ -191,10 +249,23 @@ class Data:
         :return: Data = result of the subtraction
         """
 
-        if not isinstance(other, Data):
-            raise ValueError(f"Unsupported operation '-' for Data and {type(other)}")
+        type_other = type(other)
+        functions = {int: self.__number_sub, float: self.__number_sub, Const: self.__const_sub, Data: self.__data_sub}
 
-        return self.__data_sub(other)
+        if type_other not in functions:
+            raise ValueError("Unsupported operation '-' for Data and {type(other)}")
+
+        return functions[type_other](other)
+
+    @instancemethod
+    def __rsub__(self, other):
+        """
+        Subtraction of a Data and other.
+        :param other: Union[Data, Const, int, float] = Object to subtract with
+        :return: Data = result of the substraction
+        """
+
+        return self.__number_sub(other)
 
     def __int_div(self, other):
         """
@@ -476,18 +547,17 @@ class Const:
         :return: Union[Data, Const] = Result type depends on the other object
         """
 
-        type_other = type(other)
-        if type_other == int or type_other == float:
+        if isinstance(other, int) or isinstance(other, float):
             value = self.value * other
             unit = self.unit
             return Const(value, sign=unit)
 
-        elif type_other == Const:
+        elif isinstance(other, Const):
             value = self.value * other.value
             unit = self.unit * other.unit
             return Const(value, sign=unit)
 
-        elif type_other == Data:
+        elif isinstance(other, Data):
             value = self.value * other.value
             unit = self.unit * other.unit
             n = other.n
@@ -495,7 +565,7 @@ class Const:
             return Data(str(value), str(error), n=n, sign=unit)
 
         else:
-            raise TypeError(f"unsupported operand '*' for Const and {type_other}")
+            raise TypeError(f"unsupported operand '*' for Const and {type(other)}")
 
     @instancemethod
     def __rmul__(self, other):
@@ -515,11 +585,27 @@ class Const:
         :return: Const = result of the subtraction
         """
 
-        if type(other) == Const:
+        if isinstance(other, Const):
             if self.unit == other.unit:
                 return Const(self.value + other.value, sign=self.unit)
+            else:
+                raise ArithmeticError("Addition of Data with different units is not possible")
+
+        elif isinstance(other, Data):
+            if self.unit == other.unit:
+                return Data(str(self.value + other.value), str(other.error), n=other.n, sign=self.unit)
+            else:
+                raise ArithmeticError("Addition of Data and Const with different units is not possible")
+
+        elif isinstance(other, (int, float)):
+            return Const(self.value + other, sign=self.unit)
+
         else:
             raise TypeError(f"unsupported operand '+' for Const and {type(other)}")
+
+    @instancemethod
+    def __radd__(self, other):
+        return self.__add__(other)
 
     @instancemethod
     def __sub__(self, other):
@@ -532,6 +618,11 @@ class Const:
         return self.__add__(-1 * other)
 
     @instancemethod
+    def __rsub__(self, other):
+        neg_self = -1 * self
+        return neg_self.__add__(other)
+
+    @instancemethod
     def __truediv__(self, other):
         """
         Division with other object.
@@ -539,18 +630,17 @@ class Const:
         :return: Union[Data, Const] = Result type depends on the other object
         """
 
-        type_other = type(other)
-        if type_other == int or type_other == float:
+        if isinstance(other, (int, float)):
             value = self.value / other
             unit = self.unit
             return Const(value, sign=unit)
 
-        elif type_other == Const:
+        elif isinstance(other, Const):
             value = self.value / other.value
             unit = self.unit / other.unit
             return Const(value, sign=unit)
 
-        elif type_other == Data:
+        elif isinstance(other, Data):
             value = self.value / other.value
             unit = self.unit / other.unit
             n = other.n
@@ -558,7 +648,7 @@ class Const:
             return Data(str(value), str(error), n=n, sign=unit)
 
         else:
-            raise TypeError(f"unsupported operand '*' for Const and {type_other}")
+            raise TypeError(f"unsupported operand '/' for Const and {type(other)}")
 
     @instancemethod
     def __rtruediv__(self, other):
@@ -567,13 +657,13 @@ class Const:
         :param other: Union[int, float] = other object to add with
         :return: Union[Data, Const] = Result type depends on the other object
         """
-        typ_other = type(other)
-        if typ_other == int or typ_other == float:
+
+        if isinstance(other, (int, float)):
             result = other / self.value
             unit = self.unit.flip()
             return Const(result, unit)
         else:
-            raise ValueError(f"Unsupported operation '/' for Const and {typ_other}")
+            raise ValueError(f"Unsupported operation '/' for Const and {type(other)}")
 
     @instancemethod
     def __pow__(self, other):

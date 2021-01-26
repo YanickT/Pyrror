@@ -27,21 +27,21 @@ This can cause harm if exploited.
 # Currently in progress
 
 (for the update to python 3.9 and better (newer constructs) code)
-TODO: table.py
+TODO: 
+table.py
+Improve Formula unit
 
 # TODO:
 README
-table_helper (export & import tables)
 make to python package
+
 Tests for chi_2
 Tests for regression
 Improve Tests
+Blatt mit Konts und umrechnungen
 
 # FIXME:
-chi_2.py chi2 calculation is incorrect
-
 Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)
-
 
 Data should format in such a way, that the mean value is given by 1,...
 not the error
