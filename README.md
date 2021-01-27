@@ -26,23 +26,6 @@ For natural and other constants the `Const`-class can be used.
 A `Const` also carries a `Unit` but not an uncertainty.
 
 
-## Usage
-if sign is a string:
-         there are different rules for more complex dimensions. They are also described in the Unit class only "/" not:
-            #. powered dimensions have the form of  sign = dimension_syombol '^' power. *Attention: power >= 0*!
-               Example: Area = m^2
-            #. mixed dimensions are separated by ';'.
-               Example: torque: = N;m
-            #. fractions are created by a '/'. *There can only apper one '/' in each sign*. If a dimension appears left
-               to an '/' it is count to the numerator. If it appears to the right its part of the denominator.
-               Example: speed: m/s or acceleration: m/s^2
-
-            **sign-EBNF:**
-            S := '"' units '"' | '"' units '/' units '"'
-            units := unit | unit ';' units
-            unit := string | string '^' integer
-
-
 ## Documentation
 ### controls.py
 
