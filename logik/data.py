@@ -73,21 +73,15 @@ class Data:
 
         return string
 
+    @instancemethod
+    def __repr__(self):
+        return self.__str__()
     # Calculations using simplified gauss
 
-    def __int_mul(self, other):
-        """
-        Helper function of multiplication of Data with int.
-        :param other: int = Integer to multiplicative Data with
-        :return: Data = result of the multiplication
-        """
-
-        return Data(str(self.value * other), str(self.error * other), sign=self.unit, n=self.n)
-
-    def __float_mul(self, other):
+    def __number_mul(self, other):
         """
         Helper function of multiplication of Data with float.
-        :param other: float = Float to multiplicative Data with
+        :param other: Union[int, float] = value to multiplicative Data with
         :return: Data = result of the multiplication
         """
 
@@ -125,7 +119,7 @@ class Data:
         """
 
         type_other = type(other)
-        functions = {int: self.__int_mul, float: self.__float_mul, Const: self.__const_mul, Data: self.__data_mul}
+        functions = {int: self.__number_mul, float: self.__number_mul, Const: self.__const_mul, Data: self.__data_mul}
 
         if type_other not in functions:
             raise ValueError(f"Unsupported operation '*' for Data and {type(other)}")
@@ -267,19 +261,10 @@ class Data:
 
         return self.__number_sub(other)
 
-    def __int_div(self, other):
-        """
-        Helper function of division of Data with int.
-        :param other: int = Integer to divide Data with
-        :return: Data = result of division
-        """
-
-        return Data(str(self.value / other), str(self.error / other), sign=self.unit, n=self.n)
-
-    def __float_div(self, other):
+    def __number_div(self, other):
         """
         Helper function of division of Data with float.
-        :param other: float = Float to divide Data with
+        :param other: Union[int, float] = value to divide Data with
         :return: Data = result of division
         """
 
@@ -321,7 +306,7 @@ class Data:
         """
 
         type_other = type(other)
-        functions = {int: self.__int_div, float: self.__float_div, Const: self.__const_div, Data: self.__data_div}
+        functions = {int: self.__number_div, float: self.__number_div, Const: self.__const_div, Data: self.__data_div}
         if type_other not in functions:
             raise ValueError(f"Unsupported operation '/' for Data and {type_other}")
 
@@ -540,6 +525,10 @@ class Const:
         return string
 
     @instancemethod
+    def __repr__(self):
+        return self.__str__()
+
+    @instancemethod
     def __mul__(self, other):
         """
         Multiplication with other.
@@ -547,7 +536,7 @@ class Const:
         :return: Union[Data, Const] = Result type depends on the other object
         """
 
-        if isinstance(other, int) or isinstance(other, float):
+        if isinstance(other, (int, float)):
             value = self.value * other
             unit = self.unit
             return Const(value, sign=unit)
@@ -581,8 +570,8 @@ class Const:
     def __add__(self, other):
         """
         Addition with other Const.
-        :param other: Const = other Const to add with
-        :return: Const = result of the subtraction
+        :param other: Union[Const, Data, int, float] = other object to add with
+        :return: Union[Const, Data, int, float] = result of the subtraction
         """
 
         if isinstance(other, Const):
@@ -598,7 +587,10 @@ class Const:
                 raise ArithmeticError("Addition of Data and Const with different units is not possible")
 
         elif isinstance(other, (int, float)):
-            return Const(self.value + other, sign=self.unit)
+            if self.unit == Unit():
+                return self.value + other
+            else:
+                raise ArithmeticError("Addition of values with different units is not possible")
 
         else:
             raise TypeError(f"unsupported operand '+' for Const and {type(other)}")
@@ -610,9 +602,9 @@ class Const:
     @instancemethod
     def __sub__(self, other):
         """
-        Addition with other Const.
-        :param other: Const = other Const to add with
-        :return: Const = result of the subtraction
+        Subtraction with other Const.
+        :param other: Union[Const, Data, int, float] = other object to add with
+        :return: Union[Const, Data] = result of the subtraction
         """
 
         return self.__add__(-1 * other)

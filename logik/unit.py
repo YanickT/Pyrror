@@ -5,7 +5,7 @@ from copy import deepcopy
 class Unit:
     """
     Unit class.
-    The class can not(!) identify prefactors like km as 1000 m
+    The class can not(!) identify pre-factors like km as 1000 m
     """
 
     def __init__(self, numerator="", denominator=""):  # numerator = "m;N" , denominator = "s^2;N"  => m/s^2
@@ -68,6 +68,10 @@ class Unit:
             return f"({num})/{den}"
         else:
             return f"{num}/{den}"
+
+    @instancemethod
+    def __repr__(self):
+        return self.__str__()
 
     @instancemethod
     def __mul__(self, other):
@@ -142,6 +146,7 @@ class Unit:
         Simplifies the current given units. For example m * s / m -> s
         :return: void
         """
+
         num_keys = tuple(self.numerator.keys())
         den_keys = tuple(self.denominator.keys())
 
