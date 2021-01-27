@@ -108,11 +108,11 @@ class Unit:
     def __pow__(self, other):
         """
         Power to an unit.
-        :param other: int = power
+        :param other: Union[int, float] = power
         :return: Unit = former unit power given int
         """
 
-        if type(other) != float and type(other) != int:
+        if not isinstance(other, (float, int)):
             raise ValueError("Power with %s is not defined")
 
         denominator = deepcopy(self.denominator)

@@ -141,14 +141,14 @@ class Formula:
         return dummy["error"]
 
     @instancemethod
-    def calc_unit(self, value_dict, type_dict):
+    def calc_unit(self, value_dict):
         """
         Determine the unit of the result will have.
         :param value_dict: Dict[str: Union[int, float, Data, Const]] = Dict of the variables for the formula
-        :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
         :return: Unit = Unit of the result of the formula
         """
 
+        type_dict = {key: type(value_dict[key]) for key in value_dict}
         dummy = {"unit": self.__create_formula(type_dict), "cur_unit": 1, "Symbol": Symbol, "sympy": sympy}
         exec("from sympy.functions import *", dummy)
 
@@ -209,6 +209,10 @@ class Formula:
         return self.formula_string
 
     @instancemethod
+    def __repr__(self):
+        return self.__str__()
+
+    @instancemethod
     def show_error(self, type_dict):
         """
         Show the formula for the error.
@@ -238,7 +242,7 @@ class Formula:
         type_dict = {key: type(value) for key, value in value_dict.items()}
 
         result = float(self.__calc_result(value_dict, type_dict))
-        unit = self.calc_unit(value_dict, type_dict)
+        unit = self.calc_unit(value_dict)
 
         if Data in type_dict.values():
             error = float(self.__calc_error(value_dict, type_dict))

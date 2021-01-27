@@ -11,7 +11,7 @@ class Chi2:
     Chi2 class. Calculates the Chi2 and the residues for a given Regression.
     """
 
-    def __init__(self, reg):
+    def __init__(self, reg, chi2=True):
         """
         Initialize the Chi2.
         :param reg: Regression = Regression class to calculate Chi2 for
@@ -23,7 +23,10 @@ class Chi2:
         self.probability = None
         self.chi_red = None
 
-        self.__calc()
+        if chi2:
+            self.__calc()
+        else:
+            self.__calc_residues()
 
     def __str__(self):
         """
@@ -47,8 +50,8 @@ class Chi2:
 
             if isinstance(x, (Const, Data)):
                 x = x.value
-            if not isinstance(y, (Const, Data)):
-                print("geht nicht muss noch geändert werden")
+            if not isinstance(y, Data):
+                raise ArithmeticError("Can't calculate chi2 without an error. y need to be of type Data!")
 
             y_theo = self.reg.calc(x)
             if isinstance(y_theo, (Const, Data)):
@@ -59,6 +62,22 @@ class Chi2:
         
         self.probability = stats.chi2.sf(self.chi2, degree_of_freedom)
         self.chi_red = self.chi2 / degree_of_freedom
+
+    def __calc_residues(self):
+        for row in self.reg.tab.datas:
+            x = row[self.reg.data_dict["x"]]
+            y = row[self.reg.data_dict["y"]]
+
+            if isinstance(x, (Const, Data)):
+                x = x.value
+            if isinstance(y, (Const, Data)):
+                y = y.value
+
+            y_theo = self.reg.calc(x)
+            if isinstance(y_theo, (Const, Data)):
+                y_theo = y_theo.value
+
+            self.residues.append((x, y.value - y_theo))
 
     def show_residues(self):
         """

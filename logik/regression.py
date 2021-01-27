@@ -124,7 +124,7 @@ class SimpleRegression(Regression):
         else:
             self.b = b
 
-        self.chi2 = Chi2(self)
+        self.chi2 = Chi2(self, chi2=False)
         self.f = Formula("a+b*x")
 
     def calc(self, x):

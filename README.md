@@ -29,10 +29,12 @@ A `Const` also carries a `Unit` but not an uncertainty.
 ## Documentation
 ### controls.py
 
+---
+
 #### instancemethod
 Controls if an instance of a class is modified during a method.\
 Raises an `AttributeError` if the instance is changed.\
-Usage as a decorator:
+**USAGE AS DECORATOR:**
 ```
 class Dummy:
 
@@ -41,12 +43,14 @@ class Dummy:
       return Dummy(...)
 ```
 
+---
+
 #### type_check
 Controls for a given sequence of tuples if each variable has a specific type.\
 Raises an `TypeError` if the type is incorrect.\
 `type_check(*args) -> True`
 
-Usage:
+**USAGE:**
 ```
 >>> type_check((3, int), (1.2, float))
 True
@@ -54,14 +58,16 @@ True
 TypeError: Type of '<class 'str'>' is false! Try <class 'int'> instead
 ```
 
+---
+
 #### list_type_check
 Controls if each element of a given list as a given type.\
 `list_type_check(lst, data_type) -> bool`
 - `lst`: `List[object]` = list of objects which should have the same type `data_type`
 - `data_type`: `type` = specific type
 
-Returns `True` if all `objects` in `lst` have the type `data_type` otherwise returns `False`.
-Usage:
+Returns `True` if all `objects` in `lst` have the type `data_type` otherwise returns `False`.\
+**USAGE:**
 ```
 >>> list_type_check([2, 3, 1], int)
 True
@@ -69,7 +75,13 @@ True
 False
 ```
 
+---
+---
+
 ### unit.py
+
+---
+
 #### Unit-class
 Represents a unit like 'm' for meter.\
 ``Unit(numerator="", denominator="")``
@@ -83,25 +95,18 @@ units := unit | unit ';' units
 unit := string | string '^' integer
 ```
 
-Overview of different methods implemented for the class
+**METHODS:**
+-  `flip()`:\
+    inverts the unit which means an exchange of numerator and denominator
+      
 
-| method | args | description |
-|--------|------|-------------|
-| `flip` |      | inverts the unit which means an exchange of numerator and denominator
-
-
-Overview of different implemented operations with different types
+**SPECIAL OPERATIONS:**
 
 | types | + | - | *    | /    | \> | < | ==   | <= | >= |
 |-------|---|---|------|------|----|---|------|----|----|
 |`Unit` |   |   |`Unit`|`Unit`|    |   |`bool`|    |    |
 
-
-Legend:
-- ` ` = not defined
-- `<type>` = returns object of type `<type>`
-
-Usage:
+**USAGE:**
 ```
 >>> a = Unit("m", "s")
 >>> a
@@ -114,15 +119,20 @@ m/s
 J
 ```
 
+---
+---
+
 ### unit_helper.py
-Assistance functionallity for working with units.
+Assistance functionality for working with units.
+
+---
 
 #### unit_control
 Controls if the given argument `other` carries the same unit as `self`.\
 Raises an `TypeError` if `other` does not carry any unit.\
 Raises an `ValueError` if `other` does not carry the same unit.
 
-Usage as a decorator:
+**USAGE AS DECORATOR:**
 ```
 class Dummy:
 
@@ -131,19 +141,26 @@ class Dummy:
       pass
 ```
 
+---
+
 #### has_unit
 Returns if the given variable has a `unit` attribute.\
 `has_unit(variable) -> bool`
 - `variable` = object to check 
 
-Usage:
+**USAGE:**
 ```
 >>> has_unit(3)
 False
 ```
 
+---
+---
+
 ### data.py
 Provides the `Data`-class and the `Const`-class.
+
+---
 
 #### Data-class
 Represents a real measurement with an uncertainty.\
@@ -163,7 +180,7 @@ Represents a real measurement with an uncertainty.\
 - `n` = number of significant digits. Has to be greater than 0. If 0 (or not set seperatly), the number of digits
   will be determined from the length of `error`
 
-Overview of different implemented operations with different types
+**SPECIAL OPERATIONS:**
 
 | types | +    | -    | *    | /    |  **  | \>   | <    | ==   | <=   | >=   |
 |-------|------|------|------|------|------|------|------|------|------|------|
@@ -173,11 +190,7 @@ Overview of different implemented operations with different types
 |`float`|`Data`|`Data`|`Data`|`Data`|`Data`|`bool`|`bool`|`bool`|`bool`|`bool`|
 
 
-Legend:
-- ` ` = not defined
-- `<type>` = returns object of type `<type>`
-
-Usage:
+**USAGE:**
 ```
 >>> a = Data("123.456", "1.234", power=-2, sign="m/s")
 >>> a
@@ -189,6 +202,8 @@ Usage:
 >>> c
 (4.9±1.2) m
 ```
+
+---
 
 #### Const-class
 Represents a natural constant (through SI definition some may have no error, eg. the speed of light), or a measurement with neglected uncertainty.\
@@ -203,7 +218,7 @@ Represents a natural constant (through SI definition some may have no error, eg.
   ```
   The string will be split at '/' into `numerator` and `denominator`.
 
-Overview of different implemented operations with different types
+**SPECIAL OPERATIONS:**
 
 | types | +     | -     | *     | /     |  **   | \>   | <    | ==   | <=   | >=   |
 |-------|-------|-------|-------|-------|-------|------|------|------|------|------|
@@ -212,13 +227,10 @@ Overview of different implemented operations with different types
 |`int`  |`float`|`float`|`Const`|`Const`|`Const`|`bool`|`bool`|`bool`|`bool`|`bool`|
 |`float`|`float`|`float`|`Const`|`Const`|`Const`|`bool`|`bool`|`bool`|`bool`|`bool`|
 
-Legend:
-- ` ` = not defined
-- `<type>` = returns object of type `<type>`
 
 The addition and subtraction with ints, floats is only possible if the `Const` has a `Unit` equal to `Unit()`
 
-Usage:
+**USAGE:**
 ```
 >>> a = Const(1, "m")
 >>> a
@@ -234,6 +246,103 @@ ArithmeticError: Addition of values with different units is not possible
 <class 'float'>
 ```
 
+---
+---
+
+### data_helper.py
+Assistance functionality for working with Data.
+
+---
+
+#### digits
+Returns the number of significant digits from a given error.\
+`digits(error: Union[str, int, float]) -> int`
+- `error` = the error the significant digits should be determined for
+
+The result is the number of significant digits.\
+**USAGE:**
+```
+>>> digits(1.23)
+3
+>>> digits("0.0012")
+2
+>>> digits(99.25)
+4
+```
+
+---
+
+#### round_data
+Shortens the `value` and `error` of a `Data` to its length `Data.n`. Furthermore, it calculates which power should be used in the representation.\
+`round_data(data: Data)`
+- `data` = a instance of type `Data` to round values to correct length
+
+Usage:\
+It is used inside `Data` automatically. There should not be any need to use this.
+
+---
+---
+
+### formula.py
+
+---
+
+#### Formula
+Used for more complex functions and connections of uncertain data as well as a better
+uncertainty analysis.\
+`Formula(formula_string: str)`
+- `formula_string` = `str` the given formula. This can be any valid `sympy` expression.
+
+
+**METHODS:**
+-  `latex(type_dict: Dict[str: type]) -> str`
+    - `type_dict` = Dictionary specifying which type each variable in the `Formula` has\
+    Returns a string of Latex-code of the given `Formula`
+      
+
+- `show_error(type_dict: Dict[str: type]) -> str`
+    - `type_dict` = Dictionary specifying which type each variable in the `Formula` has\
+    Returns a string of the propagation formula for the uncertainty
+      
+
+- `calc_unit(value_dict: Dict[Data, Const, float, int]) -> Unit`
+    - `value_dict` = Dictionary assign a python object to each variable in the `Formula`\
+    Returns a `Unit` for the result. If the `Unit` could not be determined shows a `warning`
+      
+
+- `calc(value_dict: Dict[Data, Const, float, int]) -> Unit`
+    - `value_dict` = Dictionary assign a python object to each variable in the `Formula`\
+    Returns the result of the calculation. If the `Unit` could not be determined shows a `warning`
+
+**USAGE:**
+```
+>>> f = Formula("x**2 + exp(y)")
+>>> f.latex({'x': Data, 'y': Data})
+('x^{2} + e^{y}', '\sqrt{4 \left(__delta^{x}\right)^{2} x^{2} + \left(__delta^{y}\right)^{2} e^{2 y}}')
+>>> a = Data("2.12", "0.05")
+>>> b = Data("1.23", "0.02")
+>>> f.calc({'x': a, 'y': b})
+(79±2)*10^-1
+>>> 
+>>> f2 = Formula("x**2 + 2 * y")
+>>> x = Data("1.3", "0.3", sign="m")
+>>> y = Data("0.1", "0.22", sign="m^2")
+>>> f2.calc({'x': x, 'y': y})
+(19±9)*10^-1 m^2
+```
+
+---
+---
+
+### regression.py
+Holds classes for different types of regressions. 
+For implementing new Regressions an abstract base class `Regression` is given.
+
+---
+
+### chi_2.py
+
+### table.py
 
 ## Currently in progress
 
@@ -241,6 +350,7 @@ ArithmeticError: Addition of values with different units is not possible
 TODO: 
 table.py
 Improve Formula unit
+
 
 ## TODO:
 
