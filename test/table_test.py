@@ -27,23 +27,6 @@ for element in liste:
 
 class MyTestCase(unittest.TestCase):
 
-    def test_add_spe(self):
-        try:
-            tab + tab2
-            raise AssertionError("Tables should not be addable")
-        except NameError:
-            pass
-
-        try:
-            tab + tab3
-            raise AssertionError("Tables should not be addable")
-        except ValueError:
-            pass
-
-        tab5 = tab + tab4
-        if tab5.datas != tab.datas + tab4.datas:
-            raise AssertionError("Add failed")
-
     def test_arithmetic_average(self):
         self.assertEqual([str(result) for result in tab.arithmetic_average()], ["(40.0±8.2)*10^-1", "1.0", "1.0"])
         self.assertEqual([str(result) for result in tab2.arithmetic_average()], ["(58.9±9.2)*10^-1", "(4.6±1.2)",
@@ -51,7 +34,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_add(self):
         tab5 = Table(columns=1)
-        insert = (1,)  # (1,) ist nötig, da der Rechner (1) direkt auf int 1 vereinfacht
+        insert = (1,)
         tab5.add(insert)
         if tab5.datas != [insert]:
             raise AssertionError("add an dataset faild")
@@ -66,26 +49,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(tab.median(), [4, 1, 1])
         self.assertEqual("[%s,%s,%s]" % tuple(tab2.median()), "[6,3.11111,13.5]")
         self.assertEqual(tab3.median(), [2, 3])
-
-    def test_find_peaks(self):
-        self.assertEqual(tab.find_peaks(), [[], [], []])
-        result = tab2.find_peaks()
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result[0], [])
-        self.assertEqual(result[1], [9])
-        self.assertEqual(len(result[2]), 0)
-        self.assertEqual(tab3.find_peaks(), [[], []])
-
-    def test_find_dips(self):
-        self.assertEqual(tab.find_dips(), [[], [], []])
-
-        result = tab2.find_dips()
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result[0], [2])
-        self.assertEqual(result[1], [2, 1])
-        self.assertEqual(len(result[2]), 0)
-
-        self.assertEqual(tab3.find_dips(), [[], []])
 
     def test_modus(self):
         self.assertEqual(tab.modus(), [[1, 2, 3, 4, 5, 6, 7], [1], [1]])
@@ -106,12 +69,4 @@ class MyTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print("Manuelle Prüfung nöetig")
-    print(tab)
-    print("")
-    print(tab2)
-    print("")
-    print(tab3)
-    print("")
-    print(tab4)
     unittest.main()

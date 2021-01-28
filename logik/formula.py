@@ -39,7 +39,9 @@ class Formula:
         units = []
         exps = list(sympy_exp.args)
         for exp in exps:
-            if type(exp) == sympy.core.power.Pow:
+            if len(exp.free_symbols) == 0:
+                continue
+            elif type(exp) == sympy.core.power.Pow:
                 units.append([str(exp.args[0]), float(exp.args[1])])
             elif type(exp) == Symbol:
                 units.append([str(exp), 1])

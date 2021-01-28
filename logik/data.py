@@ -36,6 +36,7 @@ class Data:
         if isinstance(sign, str):
             sign = sign.split("/")
             if len(sign) > 1:
+                sign = ["" if s == "1" else s for s in sign]
                 self.unit = Unit(sign[0], sign[1])
             else:
                 self.unit = Unit(sign[0])
@@ -503,6 +504,7 @@ class Const:
         if isinstance(sign, str):
             sign = sign.split("/")
             if len(sign) > 1:
+                sign = ["" if s == "1" else s for s in sign]
                 self.unit = Unit(sign[0], sign[1])
             else:
                 self.unit = Unit(sign[0])

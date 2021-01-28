@@ -1,9 +1,8 @@
 import warnings
 
+from logik.controls import type_check
 from logik.data import Data, Const
 from logik.unit import Unit
-from logik.formula import Formula
-from logik.unit_helper import has_unit
 
 
 class Table:
@@ -24,10 +23,12 @@ class Table:
         if not signs:
             self.units = [Unit("") for i in range(self.columns)]
         else:
+            self.units = []
             for sign in signs:
                 if type(sign) == str:
                     sign = sign.split("/")
                     if len(sign) > 1:
+                        sign = ["" if s == "1" else s for s in sign]
                         unit = Unit(sign[0], sign[1])
                     else:
                         unit = Unit(sign[0])
@@ -75,42 +76,11 @@ class Table:
         # fill data into table
         for data in self.datas:
             for index, element in enumerate(data):
-                """Alternative:"""
-                if type(element) == Data:
-                    new_element = Data(str(element.value), str(element.error), n=element.n)
-                elif type(element) == Const:
-                    new_element = element.value
-                else:
-                    new_element = element
-                """ENDE Alternative"""
-                string += "%s" % new_element + " " * (width[index] - len(str(new_element)))
-                string += "|"
+                string += f"{element}" + " " * (width[index] - len(str(element))) + "|"
             if not (data is self.datas[-1]):
                 string += "\n"
-        # Spalten füllen
 
         return string
-
-    def __add__(self, other):
-        """
-        merge two tables: Add the data of the other table into first one.
-        :param other: Table-Object.
-        :return: void
-        """
-
-        if isinstance(other, Table):
-            if self.columns == other.columns:
-                if self.column_names != other.column_names:
-                    raise NameError("Columns have different names")
-                if self.units != other.units:
-                    raise ValueError("At least two Columns have a different unit")
-                new_table = Table(columns=self.columns, column_names=self.column_names, signs=self.units)
-                new_table.datas = self.datas + other.datas
-                return new_table
-            else:
-                raise ValueError("Tables have different numbers of columns")
-        else:
-            raise ValueError(f"Unsupported operation '+' for table an {type(other)}")
 
     def calc(self, formula, para_dict, column_name="", sign=True):
         """
@@ -126,8 +96,7 @@ class Table:
         :return: void
         """
 
-        if not isinstance(formula, Formula):
-            raise ValueError("Given formula is not of type formula!")
+        type_check((formula, Formula))
 
         if not self.datas:
             warnings.warn(f"No data found in table.")
@@ -141,25 +110,26 @@ class Table:
         # update number of columns
         self.columns += 1
 
-        # add columns
+        # add unit to column
+        if sign is True:
+            value_dict = {
+                key: self.datas[0][para_dict[key]] if isinstance(para_dict[key], int) else float(para_dict[key])
+                if isinstance(para_dict[key], str) else para_dict[key] for key in para_dict}
+
+            unit = formula.calc_unit(value_dict)
+            self.units.append(unit)
+        elif sign is False:
+            self.units.append(Unit(""))
+        else:
+            self.units.append(sign)
+
+        # calculate data and insert them into the column
         datas = []
         for row in self.datas:
             value_dict = {key: row[para_dict[key]] if isinstance(para_dict[key], int) else float(para_dict[key])
-                          if isinstance(para_dict[key], str) else para_dict[key] for key in para_dict}
+            if isinstance(para_dict[key], str) else para_dict[key] for key in para_dict}
             datas.append(list(row) + [formula.calc(value_dict)])
-
         self.datas = datas
-
-        # add unit to column
-        if self.datas:
-            if sign is True:
-                type_dict = {key: type(value_dict[key]) for key in value_dict}
-                unit = formula.calc_unit(value_dict, type_dict)
-                self.units.append(unit)
-            elif sign is False:
-                self.units.append(Unit(""))
-            else:
-                self.units.append(sign)
 
     def add(self, data_tuple):
         """
@@ -167,24 +137,24 @@ class Table:
         :param data_tuple: Tuple[Optional[int, float, Const, Data]] = data for each column of table
         :return: void
         """
-        # TODO: check for correct data type
+
         type_tuple = type(data_tuple)
 
         if type_tuple == list:
             data_tuple = tuple(data_tuple)
         elif type_tuple != tuple:
-            raise ValueError("Expected a tuple, get %s instead" % type_tuple)
+            raise ValueError(f"Expected a tuple, get {type_tuple} instead")
 
         if len(data_tuple) == self.columns:
             for index, data in enumerate(data_tuple):
-                if type(data) in [Data, Const]:
+                if isinstance(data, (Data, Const)):
                     if data.unit != self.units[index] and data.unit != Unit(""):
-                        raise Exception("Can´t fill column of %s with %s" % (self.units[index], data.unit))
+                        raise Exception(f"Can´t fill column of {self.units[index]} with {data.unit}")
                     elif data.unit == Unit(""):
                         data_tuple[index].unit = self.units[index]
             self.datas.append(data_tuple)
         else:
-            raise ValueError("Expected an tuple of %s, get tuple of %s instead" % (self.columns, len(data_tuple)))
+            raise ValueError(f"Expected an tuple of {self.columns}, get tuple of {len(data_tuple)} instead")
 
     def arithmetic_average(self):
         """
@@ -198,30 +168,26 @@ class Table:
         """
 
         averages = []
-        n = float(len(self.datas))
+        n = len(self.datas)
         for i in range(self.columns):
-            if type(self.datas[0][i]) != Data:
-                if type(self.datas[0][i]) == Const:
-                    average = sum(data[i].value for data in self.datas) / n
-                    error = (sum((data[i].value - average) ** 2 for data in self.datas) / (n * (n - 1))) ** 0.5
-                else:
-                    average = sum(data[i] for data in self.datas) / n
-                    error = (sum((data[i] - average) ** 2 for data in self.datas) / (n * (n - 1))) ** 0.5
-            else:
+
+            # calculate mean and error
+            if isinstance(self.datas[0][i], Data):
                 w = sum([1 / data[i].error ** 2 for data in self.datas])
                 wx = sum([data[i].value / data[i].error ** 2 for data in self.datas])
-
                 average = wx / w
                 error = 1 / w ** 0.5
+            elif isinstance(self.datas[0][i], Const):
+                average = sum(data[i].value for data in self.datas) / n
+                error = (sum((data[i].value - average) ** 2 for data in self.datas) / (n * (n - 1))) ** 0.5
+            else:
+                average = sum(data[i] for data in self.datas) / n
+                error = (sum((data[i] - average) ** 2 for data in self.datas) / (n * (n - 1))) ** 0.5
 
             if error != 0.0:
-                data = Data(value=str(average),
-                            error=str(error),
-                            n=2,
-                            sign=self.units[i])
+                data = Data(value=str(average), error=str(error), n=2, sign=self.units[i])
             elif self.units[i].denominator or self.units[i].numerator:
-                data = Const(value=average,
-                             sign=self.units[i])
+                data = Const(value=average, sign=self.units[i])
             else:
                 data = average
             averages.append(data)
@@ -234,15 +200,17 @@ class Table:
         average: product( data )^(1/n)
         :return: List[Optional[float, Const]]
         """
+
         averages = []
-        n = float(len(self.datas))
+        n = len(self.datas)
         for i in range(self.columns):
             prod = 1
             for data in self.datas:
-                if type(data) in [Data, Const]:
+                if isinstance(data, (Data, Const)):
                     prod *= data[i].value
                 else:
                     prod *= data[i]
+
             if self.units[i].denominator or self.units[i].numerator:
                 value = Const(value=prod ** (1.0 / n), sign=self.units[i])
             else:
@@ -256,14 +224,16 @@ class Table:
         average: n / sum(1 / data)
         :return: List[Optional[float, Const]]
         """
+
         averages = []
-        n = float(len(self.datas))
+        n = len(self.datas)
         for i in range(self.columns):
-            column_data = [data[i].value if type(data) in [Data, Const] else data[i] for data in self.datas]
+            column_data = [data[i].value if isinstance(data, (Data, Const)) else data[i] for data in self.datas]
             average = n / sum(1 / data for data in column_data)
 
             if self.units[i].denominator or self.units[i].numerator:
                 average = Const(value=average, sign=self.units[i])
+
             averages.append(average)
         return averages
 
@@ -273,9 +243,10 @@ class Table:
         median: is the value at the half list length if sorted by value
         :return: List[Optional[float, Const]]
         """
+
         medians = []
         for i in range(self.columns):
-            column_data = [data[i].value if type(data[i]) in [Data, Const] else data[i] for data in self.datas]
+            column_data = [data[i].value if isinstance(data[i], (Data, Const)) else data[i] for data in self.datas]
             column_data.sort()
 
             length = len(column_data)
@@ -290,86 +261,13 @@ class Table:
             medians.append(data)
         return medians
 
-    def find_peaks(self):
-        """
-        search for all peaks in all columns. A peak is defined as x_{n-1} < x_{n} > x_{n+1}
-        :return: List[List[Optional[float, Const, Data]]]
-        """
-        peaks = []
-        n = len(self.datas)
-        for i in range(self.columns):
-            current_peaks = []
-            current_indice = []
-            column_data = [data[i].value if type(data) in [Data, Const] else data[i] for data in self.datas]
-
-            for index in range(1, n - 1):
-                if column_data[index] > column_data[index + 1] and column_data[index] > column_data[index - 1]:
-                    current_indice.append(index)
-
-            has_unit = self.units[i].denominator or self.units[i].numerator
-            for current_index in current_indice:
-                data = self.datas[current_index][i]
-                if type(data) == Data:
-                    new_data = Data(value=str(data.value),
-                                    error=str(data.error),
-                                    sign=self.units[i],
-                                    power=data.power,
-                                    n=data.n)
-                elif type(data) == Const:
-                    new_data = Const(value=data.value,
-                                     sign=self.units[i])
-                elif has_unit:
-                    new_data = Const(value=data,
-                                     sign=self.units[i])
-                else:
-                    new_data = data
-                current_peaks.append(new_data)
-            peaks.append(current_peaks)
-        return peaks
-
-    def find_dips(self):
-        """
-        search for all dips in all columns. A dip is defined as x_{n-1} > x_{n} < x_{n+1}
-        :return: List[List[Optional[float, Const, Data]]]
-        """
-        dips = []
-        n = len(self.datas)
-        for i in range(self.columns):
-            current_dips = []
-            current_indice = []
-            column_data = [data[i].value if type(data) in [Data, Const] else data[i] for data in self.datas]
-
-            for index in range(1, n - 1):
-                if column_data[index] < column_data[index + 1] and column_data[index] < column_data[index - 1]:
-                    current_indice.append(index)
-
-            has_unit = self.units[i].denominator or self.units[i].numerator
-            for current_index in current_indice:
-                data = self.datas[current_index][i]
-                if type(data) == Data:
-                    new_data = Data(value=str(data.value),
-                                    error=str(data.error),
-                                    sign=self.units[i],
-                                    power=data.power,
-                                    n=data.n)
-                elif type(data) == Const:
-                    new_data = Const(value=data.value,
-                                     sign=self.units[i])
-                elif has_unit:
-                    new_data = Const(value=data,
-                                     sign=self.units[i])
-                else:
-                    new_data = data
-                current_dips.append(new_data)
-            dips.append(current_dips)
-        return dips
-
     def modus(self):
         """
         calculate modus of each column.
         modus: most common value in column
         :return: List[Optional[float, Const, Data]]
         """
+
         modes = []
         for i in range(self.columns):
             column_data = [data[i].value if type(data[i]) in [Data, Const] else data[i] for data in self.datas]
@@ -390,8 +288,7 @@ class Table:
                     column_data.remove(data)
 
             if self.units[i].denominator or self.units[i].numerator:
-                mode = Const(value=mode,
-                             sign=self.units[i])
+                mode = Const(value=mode, sign=self.units[i])
             modes.append(mode)
         return modes
 
@@ -400,33 +297,30 @@ class Table:
         return the max of each column.
         :return: List[Optional[float, Data, Const]]
         """
+
         result = []
         for i in range(0, self.columns):
             current_column_datas = [element[i] for element in self.datas]
             maxi = False
             maxi_value = False
             for element in current_column_datas:
-                if type(element) == Data:
+                if isinstance(element, (Data, Const)):
                     value = element.value
                 else:
                     value = element
+
                 if maxi is False or value > maxi_value:
                     maxi = element
                     maxi_value = value
 
             if not (self.units[i].denominator or self.units[i].numerator):
                 pass
-            elif type(maxi) == Data:
-                maxi = Data(value=str(maxi.value),
-                            error=str(maxi.error),
-                            sign=self.units[i],
-                            power=maxi.power,
-                            n=maxi.n)
-            elif type(maxi) == Const:
-                maxi = Const(value=maxi.value,
-                             sign=self.units[i])
-
+            elif isinstance(maxi, Data):
+                maxi = Data(value=str(maxi.value), error=str(maxi.error), sign=self.units[i], power=maxi.power, n=maxi.n)
+            elif isinstance(maxi, Const):
+                maxi = Const(value=maxi.value, sign=self.units[i])
             result.append(maxi)
+
         return result
 
     def min(self):
@@ -434,13 +328,14 @@ class Table:
         return the min of each column.
         :return: List[Optional[float, Data, Const]]
         """
+
         result = []
         for i in range(0, self.columns):
             current_column_datas = [element[i] for element in self.datas]
             mini = False
             mini_value = False
             for element in current_column_datas:
-                if type(element) == Data:
+                if isinstance(element, Data):
                     value = element.value
                 else:
                     value = element
@@ -450,16 +345,12 @@ class Table:
 
             if not (self.units[i].numerator or self.units[i].denominator):
                 pass
-            elif type(mini) == Data:
-                mini = Data(value=str(mini.value),
-                            error=str(mini.error),
-                            sign=self.units[i],
-                            power=mini.power,
-                            n=mini.n)
-            elif type(mini) == Const:
-                mini = Const(value=mini.value,
-                             sign=self.units[i])
+            elif isinstance(mini, Data):
+                mini = Data(value=str(mini.value), error=str(mini.error), sign=self.units[i], power=mini.power, n=mini.n)
+            elif isinstance(mini, Const):
+                mini = Const(value=mini.value, sign=self.units[i])
             result.append(mini)
+
         return result
 
     def delete(self, line_index):
@@ -483,12 +374,11 @@ class Table:
         new_results = []
         for index, result in enumerate(results):
             if self.units[index].denominator or self.units[index].numerator:
-                if type(result) in [Data, Const]:
+                if isinstance(result, (Data, Const)):
                     result.unit = self.units[index]
                     new_results.append(result)
                 else:
-                    new_result = Const(value=result,
-                                       sign=self.units[index])
+                    new_result = Const(value=result, sign=self.units[index])
                     new_results.append(new_result)
         return new_results
 
@@ -500,7 +390,7 @@ class Table:
         """
 
         if name == "":
-            self.column_names.append("Column %s" % self.columns)
+            self.column_names.append(f"Column {self.columns}")
         else:
             self.column_names.append(name)
         self.columns += 1
@@ -522,15 +412,10 @@ class Table:
         :return: void
         """
 
-        if type(value) == Data:
-            value = Data(value=str(value.value),
-                         error=str(value.error),
-                         sign=Unit(""),
-                         n=value.n,
-                         power=value.power)
-        elif type(value) == Const:
-            value = Const(value=value.value,
-                          sign=Unit(""))
+        if isinstance(value, Data):
+            value = Data(value=str(value.value), error=str(value.error), sign=Unit(""), n=value.n, power=value.power)
+        elif isinstance(value, Const):
+            value = Const(value=value.value, sign=Unit(""))
         data_l = self.datas[line][:]
         data_l = list(data_l)
         data_l[column] = value
@@ -545,16 +430,12 @@ class Table:
         :param replace_dot: difference between english and german floats "3.11", "3,11"
         :return: void
         """
+
         # check if any value in a column has an error (is a Data)
         data_cols = [any([isinstance(row[i], Data) for row in self.datas]) for i in range(self.columns)]
 
         with open(path, "w", encoding="UTF-8") as doc:
             # write table headers
-            headers = []
-            for col_i in range(self.columns):
-                pass
-
-
             doc.write("".join([f"{h_str};;" if data_col else f"{h_str};"
                                for data_col, h_str in zip(data_cols,
                                                           [f"{column_name} [{unit}]" if unit != Unit("")
@@ -591,5 +472,3 @@ if __name__ == "__main__":
     f = Formula("a * x / y * z")
     tab.calc(f, {"a": "3", "x": 1, "y": 2, "z": 3})
     print(tab)
-    tab.export(r"C:\Users\NPC\Desktop\dummy.csv", replace_dot=True)
-    # print(tab.datas[0][3])

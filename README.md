@@ -453,6 +453,13 @@ It should not be necessary to use it manually.
 ### table.py
 
 ---
+
+#### Table
+`Table(column_names: List[str] = [], columns=2, signs: List[Union[str, Unit]] = [])`\
+Class for storing many relevant data of different types. 
+
+
+---
 ---
 
 ## Currently in progress
@@ -469,10 +476,9 @@ Improve Formula unit
 - make to python package
 - Tests for chi_2
 - Tests for regression
-- Improve Tests
-- 1/... als unit in Data und Table ermöglichen
-
-## FIXME:
-- Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)
+- Improve all Tests (they no longer test all functionalities)
 - Data should format in such a way, that the mean value is given by 1,...
 not the error
+  
+## FIXME:
+- Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)

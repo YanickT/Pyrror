@@ -36,9 +36,10 @@ def round_data(data):
     # determine first (non-zero) digit of error
     error_power = math.floor(math.log10(error))
 
-    # round data to correct length
+    # round data to correct length of significant digits
     error = round(error * 10 ** (- error_power), data.n - 1)
     value = round(value * 10 ** (- error_power), data.n - 1)
+
     if value == -0:
         value = 0
     data.power += error_power
@@ -46,3 +47,4 @@ def round_data(data):
     # update the value and error in the Data
     data.error = error * 10 ** data.power
     data.value = value * 10 ** data.power
+
