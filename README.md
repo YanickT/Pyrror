@@ -1,7 +1,7 @@
 # Pyrror
 Package for uncertainty analysis in Python.
 It was developed while I was doing my Bachelor in physics.
-The functionality is based on the practical courses.
+The functionality is based on the lab courses.
 
 ## Warnings
 The function exec is used within some functionalities.

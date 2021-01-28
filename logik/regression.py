@@ -338,8 +338,9 @@ class CovRegression(Regression):
                 if not isinstance(row[y_pos], Data):
                     raise TypeError(f"y has to be an object of type Data not {type(row[y_pos])}")
 
-                exec(f"__b_f__ = (1 / ({row[y_pos].error}))**2 * ({row[y_pos].value}) * ({expr}) * sympy.core.numbers.One()",
-                     self.dummy)
+                exec(
+                    f"__b_f__ = (1 / ({row[y_pos].error}))**2 * ({row[y_pos].value}) * ({expr}) * sympy.core.numbers.One()",
+                    self.dummy)
                 exec(f"__b__ += __b_f__.subs(x, {x})", self.dummy)
             b_list.append(self.dummy["__b__"])
 
@@ -353,8 +354,9 @@ class CovRegression(Regression):
                 self.dummy["__alpha__"] = 0
                 for row in self.tab.datas:
                     x = row[x_pos].value if isinstance(row[x_pos], (Const, Data)) else row[x_pos]
-                    exec(f"__alpha_f__ = (1 / ({row[y_pos].error}))**2 * ({expr}) * ({expr_2}) * sympy.core.numbers.One()",
-                         self.dummy)
+                    exec(
+                        f"__alpha_f__ = (1 / ({row[y_pos].error}))**2 * ({expr}) * ({expr_2}) * sympy.core.numbers.One()",
+                        self.dummy)
                     exec(f"__alpha__ += __alpha_f__.subs(x, {x})", self.dummy)
 
                 alpha_line.append(self.dummy["__alpha__"])
@@ -416,7 +418,8 @@ class CovRegression(Regression):
         combis = [(first, second) for first in indices for second in indices if first != second]
         for index1, index2 in combis:
             # include mixed terms
-            exec(f"__error__ += (sympy.diff(formula, {self.coeff_matrix_names[index1, 0]})) * (sympy.diff(formula, {self.coeff_matrix_names[index2, 0]})) * ({self.inverse_alphas[index1, index2]})**2",
+            exec(
+                f"__error__ += (sympy.diff(formula, {self.coeff_matrix_names[index1, 0]})) * (sympy.diff(formula, {self.coeff_matrix_names[index2, 0]})) * ({self.inverse_alphas[index1, index2]})**2",
                 self.dummy)
 
         exec(f"__error__ = sqrt(__error__.subs(x, {x}))", self.dummy)
@@ -434,8 +437,9 @@ if __name__ == "__main__":
     from random import randint as rand
     import random
 
-    y = lambda x: 3*x + 4
+    y = lambda x: 3 * x + 4
     import numpy as np
+
     y_ = np.vectorize(y)
     xs = np.linspace(0, 10, 1000)
     ys = y_(xs) + np.random.normal(0, 0.2, 1000)
@@ -445,12 +449,11 @@ if __name__ == "__main__":
     for x, y in zip(xs.tolist(), ys):
         tab.add((x, y))
     print(tab)
-    a = GaussRegression(tab, {"x":0, "y": 1})
+    a = GaussRegression(tab, {"x": 0, "y": 1})
     print(a)
     a.residues()
     print("\n\n\n")
     exit()
-
 
     data = [
         -0.849, -0.738, -0.537, -0.354, -0.196,
