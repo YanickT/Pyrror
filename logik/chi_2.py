@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-import numpy as np
 
 from logik.data import Const, Data
 
@@ -19,7 +18,7 @@ class Chi2:
 
         self.reg = reg
         self.residues = []
-        self.chi2 = 0
+        self.chi2 = None
         self.probability = None
         self.chi_red = None
 
@@ -33,8 +32,10 @@ class Chi2:
         Creates string representation for Chi2.
         :return: str = representation for Chi2
         """
-
-        return f"Chi2     : {self.chi2}, Probability: {self.probability}, Chi2 red.: {self.chi_red}"
+        if self.chi2 is None:
+            return ""
+        else:
+            return f"Chi2     : {self.chi2}, Probability: {self.probability}, Chi2 red.: {self.chi_red}"
 
     def __calc(self):
         """

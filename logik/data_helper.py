@@ -32,15 +32,16 @@ def round_data(data):
 
     value = data.value / (10 ** data.power)
     error = data.error / (10 ** data.power)
+
     # determine first (non-zero) digit of error
-    power = math.floor(math.log10(error))
+    error_power = math.floor(math.log10(error))
 
     # round data to correct length
-    error = round(error * 10 ** (- power), data.n - 1)
-    value = round(value * 10 ** (- power), data.n - 1)
+    error = round(error * 10 ** (- error_power), data.n - 1)
+    value = round(value * 10 ** (- error_power), data.n - 1)
     if value == -0:
         value = 0
-    data.power += power
+    data.power += error_power
 
     # update the value and error in the Data
     data.error = error * 10 ** data.power

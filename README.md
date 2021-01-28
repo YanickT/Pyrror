@@ -340,9 +340,120 @@ For implementing new Regressions an abstract base class `Regression` is given.
 
 ---
 
+#### Regression(ABC)
+Abstract base class for regressions. All regressions have to inherit from `Regression`.\
+`Regression(tab: Table, data_dict: Dict[str, int], n_o_f_p: int)`
+- `tab` = Table holding data for regression
+- `data_dict` = Dictionary specifying what to use for the regression.
+   The dictionary must specify columns for 'x' and 'y': `{'x': int, 'y' : int}`
+- `n_o_f_p` = number of free parameters. Specifies the number of parameters which will be determined 
+   within the regression
+
+**ABSTRACT-METHODS:**
+-  `__str__() -> str`
+    - Gives a string representation of thr regression parameters.
+   
+- `calc(x) -> Union[float, int, Data, Const]`
+  - calculates the theoretical expected value at `x` using the regression results
+  
+- `residues()`
+  - creates a plot of the residues and shows it.
+
+---
+
+#### SimpleRegression(Regression)
+Simple regression ignoring uncertainties of `x` and `y`.\
+`SimpleRegression(table: Table, data_dict: Dict[str], n=2)`
+- `tab` = Table holding data for regression
+- `data_dict` = Dictionary specifying what to use for the regression.
+   The dictionary must specify columns for 'x' and 'y': `{'x': int, 'y' : int}`
+- `n` = number of significant digits for the parameters
+
+The information of the regression include the `y-intercept` and `slope`.
+They can be accessed through `__str__()`.
+
+**USAGE:**
+
+---
+
+#### GaussRegression(Regression)
+Simple regression ignoring uncertainties of `x` and working with uncertainties of `y`.\
+`GaussRegression(table: Table, data_dict: Dict[str], n=2)`
+- `tab` = Table holding data for regression
+- `data_dict` = Dictionary specifying what to use for the regression.
+   The dictionary must specify columns for 'x' and 'y': `{'x': int, 'y' : int}`
+- `n` = number of significant digits for the parameters
+
+The information of the regression include the `y-intercept`, `slope`, `reduced chi2`, `chi2` and a `probability` for 
+such a `chi2`.\
+They can be accessed through `__str__()`.
+
+**USAGE:**
+
+---
+
+#### CovRegression(Regression)
+Simple regression ignoring uncertainties of `x` and working with uncertainties of `y`.\
+`CovRegression(formula_string: str, table: Table, data_dict: Dict[str, int], pars: List[str], n=2)`
+- `formula_string` = A string specifying a formula which should be fitted.\
+  The format of a formula is specified as given by the formula-EBNF. 
+  ```
+  S := 'y = ' exprs
+  exprs := expr | expr '+' exprs | expr '-' exprs
+  expr := para '*' func | para
+  para := char ?has to be unique?
+  func := ?mathematical function of x. Has to be a valid sympy expression?
+  ```
+  The `?` start and end EBNF-extensions.
+  
+- `table` = Table holding data for regression
+  
+- `data_dict` = Dictionary specifying what to use for the regression.
+   The dictionary must specify columns for 'x' and 'y': `{'x': int, 'y' : int}`
+
+- `pars` = List of the used parameters
+  
+- `n` = number of significant digits for the parameters
+
+The information of the regression include the `parameters`, `reduced chi2`, `chi2` and a `probability` for 
+such a `chi2`.\
+They can be accessed through `__str__()`.
+
+**USAGE:**
+
+---
+---
+
 ### chi_2.py
 
+---
+
+#### Chi2
+Calculates the reduced `chi2_red`, the `chi2`, and the `probability` for a `Regression`.\
+`Chi2(reg: Regression, chi2=True)`
+
+- `reg` = Regression to calculate `chi2` and residues for
+- `chi2` = specifies if `chi2` should be calculated or just the residues
+
+**METHODS:**
+
+- `show_residues()`
+  - creates and shows a plot of the residues
+
+  
+**USAGE:**
+
+This class is automatically used within a `Regression`.\
+It should not be necessary to use it manually.
+
+---
+---
+
+
 ### table.py
+
+---
+---
 
 ## Currently in progress
 
@@ -359,7 +470,7 @@ Improve Formula unit
 - Tests for chi_2
 - Tests for regression
 - Improve Tests
-- script with natural constants and factors for changing a unit
+- 1/... als unit in Data und Table ermöglichen
 
 ## FIXME:
 - Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)

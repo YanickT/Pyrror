@@ -53,6 +53,7 @@ class Regression(ABC):
 
 
 class SimpleRegression(Regression):
+
     """
     Simple unweighted regression ignoring uncertainties.
     """
@@ -87,6 +88,9 @@ class SimpleRegression(Regression):
         """
 
         return f"Regression:\n\ty = a + b * x\n\ta: {self.a}\n\tb: {self.b}\n\t{self.chi2}"
+
+    def __repr__(self):
+        return self.__str__()
 
     def __calc(self):
         """
@@ -146,6 +150,7 @@ class SimpleRegression(Regression):
 
 
 class GaussRegression(Regression):
+
     """
     weighted linear regression:
         ignore x-uncertainty
@@ -238,6 +243,7 @@ class GaussRegression(Regression):
 
 
 class CovRegression(Regression):
+
     """
     Regression using a covariance matrix.
     """
