@@ -300,9 +300,10 @@ uncertainty analysis.\
     Returns a string of Latex-code of the given `Formula`
       
 
-- `show_error(type_dict: Dict[str: type]) -> str`
-    - `type_dict` = Dictionary specifying which type each variable in the `Formula` has\
-    Returns a string of the propagation formula for the uncertainty
+- `show_error(type_dict: Dict[str: type], unicode=False) -> str`
+    - `type_dict` = Dictionary specifying which type each variable in the `Formula` has
+    - `unicode` = Specifies if unicode should be used
+    Returns a string of the formula and the propagation formula for the uncertainty
       
 
 - `calc_unit(value_dict: Dict[Data, Const, float, int]) -> Unit`
@@ -329,7 +330,14 @@ uncertainty analysis.\
 >>> y = Data("0.1", "0.22", sign="m^2")
 >>> f2.calc({'x': x, 'y': y})
 (19±9)*10^-1 m^2
+>>>
+>>> f = Formula("acos((2*x-1) / sin(y))")
+>>> f
+acos((2*x-1) / sin(y))
+>>> f.show_error({"x": Data, "y": Data})           
 ```
+Due to problems with markdown is a screenshot of the result given bellow:
+![Result of the '.show_error' method](images/show_error.png)
 
 ---
 ---
@@ -373,6 +381,29 @@ The information of the regression include the `y-intercept` and `slope`.
 They can be accessed through `__str__()`.
 
 **USAGE:**
+```
+>>> b = (2 * random.random() - 1) * 100
+>>> a = random.random() * 100
+>>> b, a
+(-35.60688387713966, 39.481128050640734)
+>>> f = lambda x: b * x + a
+>>> xs = list(range(10))
+>>> ys = [f(x) + random.gauss(0, 10) for x in xs]
+>>> tab = Table(column_names=["x", "y"])
+>>> for x, y in zip(xs, ys):
+        tab.add((x, y))
+>>> r = SimpleRegression(tab, {"x": 0, "y": 1})
+>>> r
+Regression:
+	y = a + b * x
+	a: (38.4±4.4)
+	b: (-345.9±8.3)*10^-1
+>>> r.residues() # shown bellow
+>>> r.plot() # shown bellow
+```
+| residues | plot |
+|----------|------|
+|![residuen](images/simple_reg_res.png)| ![plot of data](images/simple_reg_plot.png)| 
 
 ---
 
@@ -389,10 +420,35 @@ such a `chi2`.\
 They can be accessed through `__str__()`.
 
 **USAGE:**
+```
+>>> b = (2 * random.random() - 1) * 100
+>>> a = random.random() * 100
+>>> b, a
+(-57.571015317118835, 60.44085386096929)
+>>> f = lambda x: b * x + a
+>>> xs = [Const(str(x), sign="s") for x in range(15)]
+>>> ys = [Data(str(f(x.value) + random.gauss(0, 20)), "20", n=2, sign="m") for x in xs]
+>>> tab = Table(column_names=["x", "y"], signs=["s", "m"])
+>>> for x, y in zip(xs, ys):
+        tab.add((x, y))
+>>> r = GaussRegression(tab, {"x": 0, "y": 1})
+>>> r
+Regression:
+	y = a + b * x
+	a: (67.4±9.8) m
+	b: (-57.7±1.2) m/s
+	Chi2     : 10.127125000000001, Probability: 0.684, Chi2 red.: 0.7790096153846154
+>>> r.residues() # shown bellow
+>>> r.plot() # shown bellow
+```
+| residues | plot |
+|----------|------|
+|![residuen](images/gauss_reg_res.png)| ![plot of data](images/gauss_reg_plot.png)| 
 
 ---
 
 #### CovRegression(Regression)
+**!!!Attention: Unfortunatly, does this class has a bug in calculating the error with the .calc()-Method!!!**\
 Simple regression ignoring uncertainties of `x` and working with uncertainties of `y`.\
 `CovRegression(formula_string: str, table: Table, data_dict: Dict[str, int], pars: List[str], n=2)`
 - `formula_string` = A string specifying a formula which should be fitted.\
@@ -420,6 +476,29 @@ such a `chi2`.\
 They can be accessed through `__str__()`.
 
 **USAGE:**
+```
+>>> data = [
+        -0.849, -0.738, -0.537, -0.354, -0.196,
+        -0.019, 0.262, 0.413, 0.734, 0.882,
+        1.258, 1.305, 1.541, 1.768, 1.935,
+        2.147, 2.456, 2.676, 2.994, 3.200,
+        3.318]
+>>> datas = [(Const(i, sign="°C"), Data(str(data[i // 5]), "0.05", sign="mV")) for i in range(0, 105, 5)]
+>>> tab = Table(columns=2, column_names=["x", "y"], signs=["°C", "mV"])
+>>> for data in datas:
+        tab.add(data)
+>>> r = CovRegression("y = a + b*x + c*x**2", tab, {"x": 0, "y": 1}, ["a", "b", "c"])
+Regression:
+	y =  a + b*x + c*x**2
+	a: -0.919926595143981
+	b: 0.0376650836577612
+	c: 0.0000551933192665457
+	Chi2     : 26.32205952, Probability: 0.093, Chi2 red.: 1.46233664
+
+```
+| residues | plot |
+|----------|------|
+|![residuen](images/cov_reg_res.png)| ![plot of data](images/cov_reg_plot.png)| 
 
 ---
 ---
@@ -551,6 +630,61 @@ handling of the calculations.\
 
 **USAGE:**
 
+```
+>>> data = tuple(zip([1, 1, 3, 2], [random.random() for i in range(4)]))
+>>> tab = Table(column_names=["x", "y"], columns=2)
+>>> for element in data:
+        tab.add(element)
+>>> tab
+x    |y                      |
+------------------------------
+1    |0.9650392731516132     |
+1    |0.42768822918919414    |
+3    |0.0979070782420336     |
+2    |0.12872070585370476    |
+>>> tab.add_column(sign="m/s")
+True
+>>> tab
+x    |y                      |Column 2 [m/s]    |
+-------------------------------------------------
+1    |0.9650392731516132     |                  |
+1    |0.42768822918919414    |                  |
+3    |0.0979070782420336     |                  |
+2    |0.12872070585370476    |                  |
+>>> data = [Data(str(random.randint(1, 20)), str(random.random()), n=2) for i in range(4)]
+>>> for index, data_ in enumerate(data):
+        tab.insert(index, 2, data_)
+>>> tab
+x    |y                      |Column 2 [m/s]        |
+-----------------------------------------------------
+1    |0.9650392731516132     |(170.0±9.4)*10^-2     |
+1    |0.42768822918919414    |(1300.0±3.8)*10^-4    |
+3    |0.0979070782420336     |(60.0±6.5)*10^-2      |
+2    |0.12872070585370476    |(40.0±3.1)*10^-2      |
+>>> f = Formula("a * c")
+>>> tab.calc(f, {"a": 1, "c": Const(1, "s")}, "time")
+>>> tab
+x    |y                      |Column 2 [m/s]        |time [s]               |
+-----------------------------------------------------------------------------
+1    |0.9650392731516132     |(170.0±9.4)*10^-2     |0.9650392731516132     |
+1    |0.42768822918919414    |(1300.0±3.8)*10^-4    |0.42768822918919414    |
+3    |0.0979070782420336     |(60.0±6.5)*10^-2      |0.0979070782420336     |
+2    |0.12872070585370476    |(40.0±3.1)*10^-2      |0.12872070585370476    |
+>>> tab.calc(f, {"a": 2, "c": 3}, "distance")
+>>> tab
+x    |y                      |Column 2 [m/s]        |time [s]               |distance [m]         |
+---------------------------------------------------------------------------------------------------
+1    |0.9650392731516132     |(170.0±9.4)*10^-2     |0.9650392731516132     |(164.1±9.1)*10^-2    |
+1    |0.42768822918919414    |(1300.0±3.8)*10^-4    |0.42768822918919414    |(556.0±1.6)*10^-4    |
+3    |0.0979070782420336     |(60.0±6.5)*10^-2      |0.0979070782420336     |(58.7±6.4)*10^-3     |
+2    |0.12872070585370476    |(40.0±3.1)*10^-2      |0.12872070585370476    |(51.5±4.0)*10^-3     |
+>>> tab.arithmetic_average()
+[(17.5±4.8)*10^-1, (4.0±2.0)*10^-1, (1300.8±3.8)*10^-4 m/s, (4.0±2.0)*10^-1 s, (556.0±1.6)*10^-4 m]
+>>> tab.export(<path>, "dummy.csv") # <path> needs to be a real path
+```
+The last order produces a file called 'dummy.csv'. This file is given bellow:
+![export of table in '.csv'](images/table_export.png)
+
 ---
 ---
 
@@ -562,6 +696,8 @@ handling of the calculations.\
 - Improve all Tests (they no longer test all functionalities)
 - Data should format in such a way, that the mean value is given by 1,...
 not the error
+  
+- Add confindece band to plots
   
 
 ## FIXME:

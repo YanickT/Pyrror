@@ -214,10 +214,11 @@ class Formula:
         return self.__str__()
 
     @instancemethod
-    def show_error(self, type_dict):
+    def show_error(self, type_dict, unicode=True):
         """
         Show the formula for the error.
-        :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable.
+        :param type_dict: Dict[type] = Dictionary containing the types of each parameter/variable
+        :param unicode: bool = Specifies if unicode should be used
         :return: str = pretty version of the formula for the error
         """
 
@@ -226,9 +227,9 @@ class Formula:
 
         string = ""
         string += "Formel:\n"
-        string += pretty(formula)
+        string += pretty(formula, use_unicode=unicode)
         string += "\nFehlerformel nach Gauss:\n"
-        string += pretty(error_f)
+        string += pretty(error_f, use_unicode=unicode)
         return string
 
     @instancemethod

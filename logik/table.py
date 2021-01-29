@@ -3,6 +3,7 @@ import warnings
 from logik.controls import type_check
 from logik.data import Data, Const
 from logik.unit import Unit
+from logik.formula import Formula
 
 
 class Table:
@@ -18,14 +19,14 @@ class Table:
         self.datas = []
         self.columns = columns
         self.column_names = []
+        self.units = []
 
         # create units
         if not signs:
             self.units = [Unit("") for i in range(self.columns)]
         else:
-            self.units = []
             for sign in signs:
-                if type(sign) == str:
+                if isinstance(sign, str):
                     sign = sign.split("/")
                     if len(sign) > 1:
                         sign = ["" if s == "1" else s for s in sign]
@@ -82,6 +83,9 @@ class Table:
 
         return string
 
+    def __repr__(self):
+        return self.__str__()
+
     def calc(self, formula, para_dict, column_name="", sign=True):
         """
         Method for calculating new columns with dependencies to others given by a formula.
@@ -112,9 +116,17 @@ class Table:
 
         # add unit to column
         if sign is True:
-            value_dict = {
-                key: self.datas[0][para_dict[key]] if isinstance(para_dict[key], int) else float(para_dict[key])
-                if isinstance(para_dict[key], str) else para_dict[key] for key in para_dict}
+            value_dict = {}
+            for key in para_dict:
+                if isinstance(para_dict[key], int):
+                    if self.units[para_dict[key]] != Unit():
+                        value_dict[key] = Const(1, self.units[para_dict[key]])
+                    else:
+                        value_dict[key] = 1
+                elif isinstance(para_dict[key], str):
+                    value_dict[key] = float(para_dict[key])
+                else:
+                    value_dict[key] = para_dict[key]
 
             unit = formula.calc_unit(value_dict)
             self.units.append(unit)
@@ -128,7 +140,10 @@ class Table:
         for row in self.datas:
             value_dict = {key: row[para_dict[key]] if isinstance(para_dict[key], int) else float(para_dict[key])
             if isinstance(para_dict[key], str) else para_dict[key] for key in para_dict}
-            datas.append(list(row) + [formula.calc(value_dict)])
+            value = formula.calc(value_dict)
+            if isinstance(value, (Data, Const)):
+                value.unit = Unit()
+            datas.append(list(row) + [value])
         self.datas = datas
 
     def add(self, data_tuple):
@@ -152,6 +167,8 @@ class Table:
                         raise Exception(f"Can´t fill column of {self.units[index]} with {data.unit}")
                     elif data.unit == Unit(""):
                         data_tuple[index].unit = self.units[index]
+                    else:
+                        data_tuple[index].unit = Unit()
             self.datas.append(data_tuple)
         else:
             raise ValueError(f"Expected an tuple of {self.columns}, get tuple of {len(data_tuple)} instead")
@@ -206,7 +223,7 @@ class Table:
         for i in range(self.columns):
             prod = 1
             for data in self.datas:
-                if isinstance(data, (Data, Const)):
+                if isinstance(data[i], (Data, Const)):
                     prod *= data[i].value
                 else:
                     prod *= data[i]
@@ -228,7 +245,7 @@ class Table:
         averages = []
         n = len(self.datas)
         for i in range(self.columns):
-            column_data = [data[i].value if isinstance(data, (Data, Const)) else data[i] for data in self.datas]
+            column_data = [data[i].value if isinstance(data[i], (Data, Const)) else data[i] for data in self.datas]
             average = n / sum(1 / data for data in column_data)
 
             if self.units[i].denominator or self.units[i].numerator:
@@ -270,24 +287,22 @@ class Table:
 
         modes = []
         for i in range(self.columns):
-            column_data = [data[i].value if type(data[i]) in [Data, Const] else data[i] for data in self.datas]
-            mode = [column_data[0]]
-            counter = column_data.count(mode[0])
+            column_data = [data[i].value if isinstance(data[i], (Data, Const)) else data[i] for data in self.datas]
+            mode = column_data[0]
+            counter = column_data.count(mode)
             for i2 in range(counter):
-                column_data.remove(mode[0])
+                column_data.remove(mode)
 
             while len(column_data) > 0:
                 data = column_data[0]
                 new_counter = column_data.count(data)
                 if new_counter > counter:
-                    mode = [data]
+                    mode = data
                     counter = new_counter
-                elif new_counter == counter:
-                    mode.append(data)
                 for i2 in range(new_counter):
                     column_data.remove(data)
 
-            if self.units[i].denominator or self.units[i].numerator:
+            if self.units[i] != Unit():
                 mode = Const(value=mode, sign=self.units[i])
             modes.append(mode)
         return modes
@@ -316,7 +331,8 @@ class Table:
             if not (self.units[i].denominator or self.units[i].numerator):
                 pass
             elif isinstance(maxi, Data):
-                maxi = Data(value=str(maxi.value), error=str(maxi.error), sign=self.units[i], power=maxi.power, n=maxi.n)
+                maxi = Data(value=str(maxi.value), error=str(maxi.error), sign=self.units[i], power=maxi.power,
+                            n=maxi.n)
             elif isinstance(maxi, Const):
                 maxi = Const(value=maxi.value, sign=self.units[i])
             result.append(maxi)
@@ -346,7 +362,8 @@ class Table:
             if not (self.units[i].numerator or self.units[i].denominator):
                 pass
             elif isinstance(mini, Data):
-                mini = Data(value=str(mini.value), error=str(mini.error), sign=self.units[i], power=mini.power, n=mini.n)
+                mini = Data(value=str(mini.value), error=str(mini.error), sign=self.units[i], power=mini.power,
+                            n=mini.n)
             elif isinstance(mini, Const):
                 mini = Const(value=mini.value, sign=self.units[i])
             result.append(mini)
@@ -373,19 +390,22 @@ class Table:
         results = self.datas.pop(line_index)
         new_results = []
         for index, result in enumerate(results):
-            if self.units[index].denominator or self.units[index].numerator:
+            if self.units[index] != Unit():
                 if isinstance(result, (Data, Const)):
                     result.unit = self.units[index]
                     new_results.append(result)
                 else:
                     new_result = Const(value=result, sign=self.units[index])
                     new_results.append(new_result)
+            else:
+                new_results.append(result)
         return new_results
 
-    def add_column(self, name=""):
+    def add_column(self, name="", sign=""):
         """
         Adds a column to table.
-        :param name: str; name of the new table
+        :param name: str = name of the new table
+        :param unit: Union[str, Unit] = unit of the new column
         :return: void
         """
 
@@ -394,6 +414,20 @@ class Table:
         else:
             self.column_names.append(name)
         self.columns += 1
+
+        if isinstance(sign, str):
+            sign = sign.split("/")
+            if len(sign) > 1:
+                sign = ["" if s == "1" else s for s in sign]
+                unit = Unit(sign[0], sign[1])
+            else:
+                unit = Unit(sign[0])
+            self.units.append(unit)
+
+        elif isinstance(sign, Unit):
+            self.units.append(sign)
+        else:
+            raise TypeError(f"Expected unit or string got {type(sign)} instead")
 
         for index in range(len(self.datas)):
             element = self.datas[index][:]
@@ -434,7 +468,7 @@ class Table:
         # check if any value in a column has an error (is a Data)
         data_cols = [any([isinstance(row[i], Data) for row in self.datas]) for i in range(self.columns)]
 
-        with open(path + name, "w", encoding="UTF-8") as doc:
+        with open(path + "/" + name, "w", encoding="UTF-8") as doc:
             # write table headers
             doc.write("".join([f"{h_str};;" if data_col else f"{h_str};"
                                for data_col, h_str in zip(data_cols,
@@ -457,20 +491,4 @@ class Table:
 
 
 if __name__ == "__main__":
-    from logik.formula import Formula
-
-    tab = Table(columns=2, column_names=["x", "y"], signs=["", "mV"])
-
-    for i in range(1, 100):
-        tab.add([i, Data(str(i), "0.05")])
-    # print(tab)
-
-    f = Formula("2/x")
-    tab.calc(f, {"x": 0}, column_name="z")
-    tab.calc(f, {"x": 1}, column_name="a")
-
-    f = Formula("a * x / y * z")
-    tab.calc(f, {"a": "3", "x": 1, "y": 2, "z": 3})
-    tab.export(r"C:\Users\yanic\Documents\GitHub\Pyrror\gitignore\dummy.csv", True)
-    tab.export(r"C:\Users\yanic\Documents\GitHub\Pyrror\gitignore\dummy2.csv")
-    print(tab)
+    pass

@@ -1,11 +1,15 @@
 from sympy import Matrix
 import sympy
+import matplotlib.pyplot as plt
+import warnings
+import numpy as np
 
 from logik.data import Data, Const
 from logik.formula import Formula
 from logik.controls import type_check, list_type_check
 from abc import ABC, abstractmethod
 from logik.chi_2 import Chi2
+from logik.table import Table
 
 
 class Regression(ABC):
@@ -51,9 +55,16 @@ class Regression(ABC):
         """
         pass
 
+    @abstractmethod
+    def plot(self, points: int):
+        """
+        Plot graph of regression an experimental values
+        :return:
+        """
+        pass
+
 
 class SimpleRegression(Regression):
-
     """
     Simple unweighted regression ignoring uncertainties.
     """
@@ -119,17 +130,22 @@ class SimpleRegression(Regression):
         delta_a = (s_2 / delta_2 * x_2) ** 0.5
         delta_b = (n * s_2 / delta_2) ** 0.5
 
+        a_unit = self.tab.units[y_pos]
+        b_unit = self.tab.units[y_pos] / self.tab.units[x_pos]
+
         if delta_a:
-            self.a = Data(str(a), str(delta_a), n=self.n)
+            self.a = Data(str(a), str(delta_a), n=self.n, sign=a_unit)
         else:
             self.a = a
+            warnings.warn("a has no uncertainty! Unit is also dumped")
         if delta_b:
-            self.b = Data(str(b), str(delta_b), n=self.n)
+            self.b = Data(str(b), str(delta_b), n=self.n, sign=b_unit)
         else:
             self.b = b
+            warnings.warn("b has no uncertainty! Unit is also dumped")
 
-        self.chi2 = Chi2(self, chi2=False)
         self.f = Formula("a+b*x")
+        self.chi2 = Chi2(self, chi2=False)
 
     def calc(self, x):
         """
@@ -138,7 +154,7 @@ class SimpleRegression(Regression):
         :return: Union[float, int] = f(x)
         """
 
-        if type(x) not in [int, float]:
+        if not isinstance(x, (int, float)):
             raise TypeError(f"get unexpected type '{type(x)}'. Try int or float instead")
 
         data = self.f.calc({"a": self.a, "b": self.b, "x": x})
@@ -148,9 +164,28 @@ class SimpleRegression(Regression):
     def residues(self):
         self.chi2.show_residues()
 
+    def plot(self, points=100):
+        # get experimental data
+        data = [(row[self.data_dict["x"]], row[self.data_dict["y"]]) for row in self.tab.datas]
+        xs, ys = tuple(zip(*data))
+
+        x_values = [x.value if isinstance(x, (Const, Data)) else x for x in xs]
+        y_values = [y.value if isinstance(y, (Const, Data)) else y for y in ys]
+        mini = min(x_values)
+        maxi = max(x_values)
+
+        # get theoretical data
+        xs = np.linspace(mini, maxi, points).tolist()
+        ys = [self.calc(x) for x in xs]
+        ys = [y.value if isinstance(y, (Const, Data)) else y for y in ys]
+
+        plt.plot(x_values, y_values, "x", label="experimental data")
+        plt.plot(xs, ys, "-", label=f"f(x)={self.a} + {self.b} * x")
+        plt.legend()
+        plt.show()
+
 
 class GaussRegression(Regression):
-
     """
     weighted linear regression:
         ignore x-uncertainty
@@ -241,9 +276,30 @@ class GaussRegression(Regression):
     def residues(self):
         self.chi2.show_residues()
 
+    def plot(self, points=100):
+        # get experimental data
+        data = [(row[self.data_dict["x"]], row[self.data_dict["y"]]) for row in self.tab.datas]
+        xs, ys = tuple(zip(*data))
+
+        x_values = [x.value if isinstance(x, (Const, Data)) else x for x in xs]
+        y_values = [y.value if isinstance(y, (Const, Data)) else y for y in ys]
+        y_errors = [y.error if isinstance(y, (Const, Data)) else y for y in ys]
+
+        mini = min(x_values)
+        maxi = max(x_values)
+
+        # get theoretical data
+        xs = np.linspace(mini, maxi, points).tolist()
+        ys = [self.calc(x) for x in xs]
+        y_mean = [y.value if isinstance(y, (Const, Data)) else y for y in ys]
+
+        plt.errorbar(x_values, y_values, yerr=y_errors, fmt='.k', label="experimental data")
+        plt.plot(xs, y_mean, "-", label=f"f(x)={self.a} + {self.b} * x")
+        plt.legend()
+        plt.show()
+
 
 class CovRegression(Regression):
-
     """
     Regression using a covariance matrix.
     """
@@ -394,6 +450,9 @@ class CovRegression(Regression):
         string += f"\n\t{self.chi2}"
         return string
 
+    def __repr__(self):
+        return self.__str__()
+
     def calc(self, x):
         """
         Calculate the result for a given x. Regression result can be seen as function f(x).
@@ -437,29 +496,32 @@ class CovRegression(Regression):
     def residues(self):
         self.chi2.show_residues()
 
+    def plot(self, points=1000):
+
+        # get experimental data
+        data = [(row[self.data_dict["x"]], row[self.data_dict["y"]]) for row in self.tab.datas]
+        xs, ys = tuple(zip(*data))
+
+        x_values = [x.value if isinstance(x, (Const, Data)) else x for x in xs]
+        y_values = [y.value if isinstance(y, (Const, Data)) else y for y in ys]
+        y_errors = [y.error if isinstance(y, (Const, Data)) else y for y in ys]
+
+        mini = min(x_values)
+        maxi = max(x_values)
+
+        # get theoretical data
+        xs = np.linspace(mini, maxi, points).tolist()
+        ys = [self.calc(x) for x in xs]
+        y_mean = [y.value if isinstance(y, (Const, Data)) else y for y in ys]
+
+        plt.errorbar(x_values, y_values, yerr=y_errors, fmt='.k', label="experimental data")
+        plt.plot(xs, y_mean, "-", label="fitted curve")
+        plt.legend()
+        plt.show()
+
 
 if __name__ == "__main__":
     from logik.table import Table
-    from random import randint as rand
-    import random
-
-    y = lambda x: 3 * x + 4
-    import numpy as np
-
-    y_ = np.vectorize(y)
-    xs = np.linspace(0, 10, 1000)
-    ys = y_(xs) + np.random.normal(0, 0.2, 1000)
-    ys = [Data(str(float(e)), "0.2") for e in ys.tolist()]
-
-    tab = Table(columns=2, column_names=["x", "y"])
-    for x, y in zip(xs.tolist(), ys):
-        tab.add((x, y))
-    print(tab)
-    a = GaussRegression(tab, {"x": 0, "y": 1})
-    print(a)
-    a.residues()
-    print("\n\n\n")
-    exit()
 
     data = [
         -0.849, -0.738, -0.537, -0.354, -0.196,
@@ -474,6 +536,8 @@ if __name__ == "__main__":
     for data in datas:
         tab.add(data)
     print(tab)
-    a = CovRegression("y = a + b*x + c*x**2", tab, {"x": 0, "y": 1}, ["a", "b", "c"])
-    print(a)
-    print(a.calc(80))
+    r = CovRegression("y = a + b*x + c*x**2", tab, {"x": 0, "y": 1}, ["a", "b", "c"])
+    print(r)
+    print(r.calc(80))
+    r.plot()
+    r.residues()

@@ -35,13 +35,14 @@ class Chi2:
         if self.chi2 is None:
             return ""
         else:
-            return f"Chi2     : {self.chi2}, Probability: {self.probability}, Chi2 red.: {self.chi_red}"
+            return f"Chi2     : {self.chi2}, Probability: {self.probability:.3f}, Chi2 red.: {self.chi_red}"
 
     def __calc(self):
         """
         Calculate Chi2 and Chi2_red.
         :return: void
         """
+        self.chi2 = 0
 
         degree_of_freedom = len(self.reg.tab.datas) - self.reg.n_o_f_p
 
@@ -78,7 +79,7 @@ class Chi2:
             if isinstance(y_theo, (Const, Data)):
                 y_theo = y_theo.value
 
-            self.residues.append((x, y.value - y_theo))
+            self.residues.append((x, y - y_theo))
 
     def show_residues(self):
         """
