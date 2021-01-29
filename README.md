@@ -455,24 +455,107 @@ It should not be necessary to use it manually.
 ---
 
 #### Table
-`Table(column_names: List[str] = [], columns=2, signs: List[Union[str, Unit]] = [])`\
-Class for storing many relevant data of different types. 
+Class for storing many relevant data of different types. It can perform calculations columnwise and simplifies the 
+handling of the calculations.\
+`Table(column_names: List[str] = [], columns=2, signs: List[Union[str, Unit]] = [])`
+- `column_names` = List of strings representing the names for the column
+- `columns` = Number of columns for the table
+- `signs` = List of units defined as given by the sign-EBNF:
+```
+    S := '"' units '"' | '"' units '/' units '"'
+  units := unit | unit ';' units
+  unit := string | string '^' integer
+```
 
+**METHODS:**
+- `calc(formula: Formula, para_dict: Dict[str: Union[int, str, Any]], column_name="", sign=True)`\
+  Uses the given formula on each row of the table to calculate a new column.
+   - `formula` = Formula to use for calculation
+   - `para_dict` = Dictionary specifying how the parameters are set.
+      How the parameter will be treated depends on the type of the value.
+        - `int`: The value will be used as column index, and the parameter will be set row-wise
+        - `str`: The value will be used as value using `float(value)`
+        - `Any`: All other types will be used as they are
+    
+
+- `add(data_tuple: Tuple[Any])`\
+  Adds a new data-row to the `Table`. All columns have to be set. Use an empty string if you wish to fill it later.
+   - `data_tuple` = Tuple of data to add in. 
+    If a `Data` or `Const` is inserted it must have the same `Unit` as the column or `Unit()`
+
+
+- `delete(line_index: int)`\
+  Deletes a data-row in the `Table`. 
+    - `line_index` = The line to delete.
+   
+    
+- `drop(line_index: int) -> List[Any]`\
+  Deletes a data-row in the `Table` and returns it. 
+    - `line_index` = The line to delete.
+    
+
+- `add_column(name="")`\
+  Adds a new column to the `Table`.  
+    - `name` = Name of the new column. If not set the name will be 'Column \<i>' with i is the number of columns.
+
+
+- `insert(line: int, column: int, value: Any)`\
+  Inserts a value at `line`, `column`.  
+    - `line` = The line the value has to be inserted
+    - `column` = The column the value has to be inserted
+    - `value` = The value to insert into the `Table`. If the value contains a `Unit` it will be replaced by the
+    one corresponding to the column.
+      
+
+- `export(path: str, name: str, replace_dot=False)`\
+  Exports the `Table` in '.csv'-format.  
+    - `path` = path were the table should be saved
+    - `name` = name of the file. Should end with '.csv'
+    - `replace_dot` = Specifies if a '.' or a ',' is used to separate the decimals
+
+
+- `max() -> List[Any]`\
+  Returns the max of each column.\
+  The type of each element in the list depend on the types in the column.
+
+
+- `min() -> List[Any]`\
+  Returns the min of each column.\
+  The type of each element in the list depend on the types in the column.
+  
+
+- `arithmetic_average() -> List[Data]`\
+  Returns the arithmetic average of all columns (mean + std).\
+  The type of each element in the list depend on the types in the column.\
+  If the type of the column is `Data` the average will be a weighted mean with its error.\
+  Otherwise the uncertainty will be the sample standard deviation.
+
+
+- `geometric_average() -> List[Union[Unit, float]]`\
+  Returns the geometric average of all columns (mean only).\
+  The type of each element depend on the `Unit` of the column an will either be a `float` or `Const`.
+
+
+- `harmonic_average() -> List[Union[Unit, float]]`\
+    Returns the harmonic average of all columns (mean only).\
+    The type of each element depend on the `Unit` of the column an will either be a `float` or `Const`.
+
+
+- `median() -> List[Union[Unit, float]]`\
+    Returns the median of all columns (mean only).\
+    The type of each element depend on the `Unit` of the column an will either be a `float` or `Const`.
+
+- `modus() -> List[Union[Unit, float]]`\
+    Returns the modus of all columns (mean only).\
+    The type of each element depend on the `Unit` of the column an will either be a `float` or `Const`.
+
+**USAGE:**
 
 ---
 ---
-
-## Currently in progress
-
-(for the update to python 3.9 and better (newer constructs) code)
-TODO: 
-table.py
-Improve Formula unit
-
 
 ## TODO:
 
-- README
 - make to python package
 - Tests for chi_2
 - Tests for regression
@@ -480,5 +563,6 @@ Improve Formula unit
 - Data should format in such a way, that the mean value is given by 1,...
 not the error
   
+
 ## FIXME:
 - Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)

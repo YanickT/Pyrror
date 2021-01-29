@@ -50,7 +50,6 @@ class Formula:
             else:
                 warnings.warn(f"Unit in non linear function encountered:\n {exp} \n => Ignoring the unit")
                 return False
-
         return units
 
     @instancemethod
@@ -242,17 +241,18 @@ class Formula:
         """
 
         type_dict = {key: type(value) for key, value in value_dict.items()}
+        types = [type(value_dict[key]) for key in value_dict]
 
         result = float(self.__calc_result(value_dict, type_dict))
         unit = self.calc_unit(value_dict)
 
-        if Data in type_dict.values():
+        if Data in types:
             error = float(self.__calc_error(value_dict, type_dict))
 
             significant_digits = min([value_dict[key].n for key in type_dict if type_dict[key] == Data])
             return Data(str(result), str(error), n=significant_digits, sign=unit)
 
-        elif Const in type_dict:
+        elif Const in types:
             return Const(result, unit)
 
         return result

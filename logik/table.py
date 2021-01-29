@@ -87,7 +87,7 @@ class Table:
         Method for calculating new columns with dependencies to others given by a formula.
         The new column is added to the current data.
         :param formula: Formula-Object = Connection between parameters, and table columns
-        :param para_dict: Dict[str, Optional[int, str]] = dictionary specifying which objects to use in formula
+        :param para_dict: Dict[str, Optional[int, str, Any]] = dictionary specifying which objects to use in formula
             key (str): name of variable or parameter in formula-object
             value (int): index of column in table for the parameter at key
             value (str): fixed parameter for equation. Should be str(<float>) (equal for all columns)
@@ -265,7 +265,7 @@ class Table:
         """
         calculate modus of each column.
         modus: most common value in column
-        :return: List[Optional[float, Const, Data]]
+        :return: List[Optional[float, Const]]
         """
 
         modes = []
@@ -423,7 +423,7 @@ class Table:
         self.datas[line] = data_l
         return True
 
-    def export(self, path, replace_dot=False):
+    def export(self, path, name, replace_dot=False):
         """
         Exports data in .csv format
         :param path: path to .csv file (.csv in name needed)
@@ -434,7 +434,7 @@ class Table:
         # check if any value in a column has an error (is a Data)
         data_cols = [any([isinstance(row[i], Data) for row in self.datas]) for i in range(self.columns)]
 
-        with open(path, "w", encoding="UTF-8") as doc:
+        with open(path + name, "w", encoding="UTF-8") as doc:
             # write table headers
             doc.write("".join([f"{h_str};;" if data_col else f"{h_str};"
                                for data_col, h_str in zip(data_cols,
@@ -471,4 +471,6 @@ if __name__ == "__main__":
 
     f = Formula("a * x / y * z")
     tab.calc(f, {"a": "3", "x": 1, "y": 2, "z": 3})
+    tab.export(r"C:\Users\yanic\Documents\GitHub\Pyrror\gitignore\dummy.csv", True)
+    tab.export(r"C:\Users\yanic\Documents\GitHub\Pyrror\gitignore\dummy2.csv")
     print(tab)
