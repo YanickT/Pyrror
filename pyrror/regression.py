@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 import warnings
 import numpy as np
 
-from logik.data import Data, Const
-from logik.formula import Formula
-from logik.controls import type_check, list_type_check
+from pyrror.data import Data, Const
+from pyrror.formula import Formula
+from pyrror.controls import type_check, list_type_check
 from abc import ABC, abstractmethod
-from logik.chi_2 import Chi2
-from logik.table import Table
+from pyrror.chi_2 import Chi2
+from pyrror.table import Table
 
 
 class Regression(ABC):
@@ -521,7 +521,7 @@ class CovRegression(Regression):
 
 
 if __name__ == "__main__":
-    from logik.table import Table
+    from pyrror.table import Table
 
     data = [
         -0.849, -0.738, -0.537, -0.354, -0.196,

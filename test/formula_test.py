@@ -1,6 +1,6 @@
 import unittest
-from logik.formula import Formula
-from logik.data import Data
+from pyrror.formula import Formula
+from pyrror.data import Data
 
 """Es wird die calc-Methode der Formula Klasse getestet"""
 

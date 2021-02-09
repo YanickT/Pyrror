@@ -1,5 +1,5 @@
 import unittest
-from logik.unit import Unit
+from pyrror.unit import Unit
 
 a = Unit("m")
 b = Unit("s")

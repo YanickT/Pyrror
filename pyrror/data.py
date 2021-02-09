@@ -1,7 +1,7 @@
-from logik.controls import type_check, instancemethod
-from logik.unit_helper import unit_control
-from logik.data_helper import round_data, digits
-from logik.unit import Unit
+from pyrror.controls import type_check, instancemethod
+from pyrror.unit_helper import unit_control
+from pyrror.data_helper import round_data, digits
+from pyrror.unit import Unit
 from typing import Union
 
 

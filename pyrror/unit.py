@@ -1,4 +1,4 @@
-from logik.controls import type_check, instancemethod
+from pyrror.controls import type_check, instancemethod
 from copy import deepcopy
 
 

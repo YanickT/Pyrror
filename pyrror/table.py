@@ -1,9 +1,9 @@
 import warnings
 
-from logik.controls import type_check
-from logik.data import Data, Const
-from logik.unit import Unit
-from logik.formula import Formula
+from pyrror.controls import type_check
+from pyrror.data import Data, Const
+from pyrror.unit import Unit
+from pyrror.formula import Formula
 
 
 class Table:

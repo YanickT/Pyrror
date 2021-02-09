@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 
-from logik.data import Const, Data
+from pyrror.data import Const, Data
 
 
 class Chi2:

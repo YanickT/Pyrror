@@ -1,5 +1,5 @@
 import unittest
-from logik.data import Const
+from pyrror.data import Const
 
 a = Const(10, "m")
 b = Const(1, "s")

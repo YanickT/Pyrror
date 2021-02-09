@@ -1,5 +1,5 @@
 import unittest
-from logik.data import Data
+from pyrror.data import Data
 
 a = Data("10", "1")
 b = Data("10", "1.0")

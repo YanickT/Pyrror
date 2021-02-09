@@ -1,6 +1,6 @@
-from logik.data import Data, Const
-from logik.unit import Unit
-from logik.controls import instancemethod
+from pyrror.data import Data, Const
+from pyrror.unit import Unit
+from pyrror.controls import instancemethod
 
 from sympy import Symbol, pretty, latex
 import sympy
