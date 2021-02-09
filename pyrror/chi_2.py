@@ -89,8 +89,22 @@ class Chi2:
         xs, ys = tuple(zip(*self.residues))
 
         plt.plot(xs, ys, "x")
-        plt.xlabel = self.reg.tab.column_names[self.reg.data_dict['x']]
+        plt.xlabel(self.reg.tab.column_names[self.reg.data_dict['x']])
         ylabel = self.reg.tab.column_names[self.reg.data_dict['y']]
-        plt.ylabel = f"{ylabel} - $\\mathrm{{{ylabel}_{{theo}}}}$"
-        plt.title(f"Residues, $\chi^2 = {self.chi2}$")
+
+        if str(self.reg.tab.units[self.reg.data_dict['x']]) != "":
+            plt.xlabel(f"{self.reg.tab.column_names[self.reg.data_dict['x']]} [{self.reg.tab.units[self.reg.data_dict['x']]}]")
+        else:
+            plt.xlabel(f"{self.reg.tab.column_names[self.reg.data_dict['x']]}")
+
+        ylabel = self.reg.tab.column_names[self.reg.data_dict['y']]
+        if str(self.reg.tab.units[self.reg.data_dict['y']]) != "":
+            plt.ylabel(f"{ylabel} - $\\mathrm{{{ylabel}_{{theo}}}}$ [{self.reg.tab.units[self.reg.data_dict['y']]}]")
+        else:
+            plt.ylabel(f"{self.reg.tab.column_names[self.reg.data_dict['y']]}")
+
+        if self.chi2 is not None:
+            plt.title(f"Residues, $\chi^2 = {self.chi2}$")
+        else:
+            plt.title(f"Residues")
         plt.show()

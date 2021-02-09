@@ -698,7 +698,7 @@ The last order produces a file called 'dummy.csv'. This file is given bellow:
 not the error
   
 - Add confindece band to plots
-- Add automatic x/y label to plot and residue (plot for SimpleRegression already done)
+- Add automatic x/y label to plot (for SimpleRegression already done)
 
 ## FIXME:
 - Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)
