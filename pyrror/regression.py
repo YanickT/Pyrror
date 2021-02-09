@@ -181,6 +181,16 @@ class SimpleRegression(Regression):
 
         plt.plot(x_values, y_values, "x", label="experimental data")
         plt.plot(xs, ys, "-", label=f"f(x)={self.a} + {self.b} * x")
+
+        if str(self.tab.units[self.data_dict['x']]) != "":
+            plt.xlabel(f"{self.tab.column_names[self.data_dict['x']]} [{self.tab.units[self.data_dict['x']]}]")
+        else:
+            plt.xlabel(f"{self.tab.column_names[self.data_dict['x']]}")
+
+        if str(self.tab.units[self.data_dict['y']]) != "":
+            plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]} [{self.tab.units[self.data_dict['y']]}]")
+        else:
+            plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]}")
         plt.legend()
         plt.show()
 
