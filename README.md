@@ -699,6 +699,7 @@ not the error
   
 - Add confindece band to plots
 - Add automatic x/y label to plot (for SimpleRegression already done)
+- update the images
 
 ## FIXME:
 - Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)
