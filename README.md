@@ -1,4 +1,7 @@
 # Pyrror
+Currently in rewriting phase.
+
+
 Package for uncertainty analysis in Python.
 It was developed while I was doing my Bachelor in physics.
 The functionality is based on the lab courses.
