@@ -164,7 +164,7 @@ class SimpleRegression(Regression):
     def residues(self):
         self.chi2.show_residues()
 
-    def plot(self, points=100):
+    def plot(self, points=100, title=None):
         # get experimental data
         data = [(row[self.data_dict["x"]], row[self.data_dict["y"]]) for row in self.tab.datas]
         xs, ys = tuple(zip(*data))
@@ -179,8 +179,8 @@ class SimpleRegression(Regression):
         ys = [self.calc(x) for x in xs]
         ys = [y.value if isinstance(y, (Const, Data)) else y for y in ys]
 
-        plt.plot(x_values, y_values, "x", label="experimental data")
-        plt.plot(xs, ys, "-", label=f"f(x)={self.a} + {self.b} * x")
+        plt.plot(x_values, y_values, ".", label="experimental data")
+        plt.plot(xs, ys, "-", label=f"f(x)= $a + b \\cdot x$ \na: {self.a}\nb: {self.b}")
 
         if str(self.tab.units[self.data_dict['x']]) != "":
             plt.xlabel(f"{self.tab.column_names[self.data_dict['x']]} [{self.tab.units[self.data_dict['x']]}]")
@@ -191,6 +191,9 @@ class SimpleRegression(Regression):
             plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]} [{self.tab.units[self.data_dict['y']]}]")
         else:
             plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]}")
+
+        if title is not None:
+            plt.title(title)
         plt.legend()
         plt.show()
 
@@ -305,6 +308,17 @@ class GaussRegression(Regression):
 
         plt.errorbar(x_values, y_values, yerr=y_errors, fmt='.k', label="experimental data")
         plt.plot(xs, y_mean, "-", label=f"f(x)={self.a} + {self.b} * x")
+
+        if str(self.tab.units[self.data_dict['x']]) != "":
+            plt.xlabel(f"{self.tab.column_names[self.data_dict['x']]} [{self.tab.units[self.data_dict['x']]}]")
+        else:
+            plt.xlabel(f"{self.tab.column_names[self.data_dict['x']]}")
+
+        if str(self.tab.units[self.data_dict['y']]) != "":
+            plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]} [{self.tab.units[self.data_dict['y']]}]")
+        else:
+            plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]}")
+
         plt.legend()
         plt.show()
 
@@ -526,6 +540,17 @@ class CovRegression(Regression):
 
         plt.errorbar(x_values, y_values, yerr=y_errors, fmt='.k', label="experimental data")
         plt.plot(xs, y_mean, "-", label="fitted curve")
+
+        if str(self.tab.units[self.data_dict['x']]) != "":
+            plt.xlabel(f"{self.tab.column_names[self.data_dict['x']]} [{self.tab.units[self.data_dict['x']]}]")
+        else:
+            plt.xlabel(f"{self.tab.column_names[self.data_dict['x']]}")
+
+        if str(self.tab.units[self.data_dict['y']]) != "":
+            plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]} [{self.tab.units[self.data_dict['y']]}]")
+        else:
+            plt.ylabel(f"{self.tab.column_names[self.data_dict['y']]}")
+
         plt.legend()
         plt.show()
 

@@ -1,5 +1,5 @@
-from data import Const
-
+from pyrror.data import Const
+import math
 
 # convert units (pre-factors)
 KM2M = Const(1000, "m/km")
@@ -30,10 +30,16 @@ MA2A = 1 / A2MA
 
 
 # convert units
-J2SI = Const(1, "kg*m^2/s^2")
+J2SI = Const(1, "kg;m^2/s^2;J")
+T2SI = Const(1, sign="kg/s^2;A;T")
+C2SI = Const(1, sign="s;A/C")
 
 
 # natural constants
 C = Const(2.99792458e8, "m/s")
-H = Const(6.62607015e-34, "J/s")
+H = Const(6.62607015e-34, "J;s")
+HBAR = H / (2 * math.pi)
 N = Const(6.02214076e23, "1/mol")
+ME = Const(9.1093837015E-28, "kg")
+E = Const(1.602176634E-19, "C")
+KB = Const(1.380649e-23, "J/K")

@@ -1,4 +1,5 @@
 import warnings
+import pickle
 
 from pyrror.controls import type_check
 from pyrror.data import Data, Const
@@ -140,7 +141,7 @@ class Table:
         for row in self.datas:
             value_dict = {key: row[para_dict[key]] if isinstance(para_dict[key], int) else float(para_dict[key])
             if isinstance(para_dict[key], str) else para_dict[key] for key in para_dict}
-            value = formula.calc(value_dict)
+            value = formula.calc(value_dict, sign=False)
             if isinstance(value, (Data, Const)):
                 value.unit = Unit()
             datas.append(list(row) + [value])
@@ -488,6 +489,10 @@ class Table:
                     data_string = data_string.replace(".", ",")
 
                 doc.write(data_string)
+
+    def save(self, path, name):
+        with open(f"{path}/{name}.ta", 'wb') as doc:
+            pickle.dump(self, doc)
 
 
 if __name__ == "__main__":

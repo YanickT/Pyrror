@@ -77,8 +77,27 @@ class Data:
     @instancemethod
     def __repr__(self):
         return self.__str__()
-    # Calculations using simplified gauss
 
+    def latex(self):
+        # insert values
+        if self.n > 1:
+            string = f"({self.value * 10 ** (-self.power):.{(self.n - 1)}f}±{self.error * (10 ** -self.power):.{(self.n - 1)}f})"
+        elif self.n == 1:
+            string = f"({self.value * 10 ** (-self.power):.0f} \\pm {self.error * (10 ** -self.power):.0f})"
+        else:
+            raise ValueError("n could not be smaller than 1")
+
+        # add power
+        if self.power != 0:
+            string += f"\\cdot 10^{{{self.power}}}"
+
+        # add unit
+        unit = str(self.unit)
+        if unit != "":
+            string += f" {unit}"
+        return string
+
+    # Calculations using simplified gauss
     def __number_mul(self, other):
         """
         Helper function of multiplication of Data with float.
@@ -159,7 +178,9 @@ class Data:
         """
 
         if self.unit == Unit(""):
-            return Data(str(self.value + other), str(self.error), n=self.n, power=self.power)
+            data = Data(str(self.value + other), str(self.error), n=self.n)
+            data.power = self.power
+            return data
 
     @unit_control
     def __const_add(self, other):
@@ -224,7 +245,9 @@ class Data:
         """
 
         if self.unit == Unit(""):
-            return Data(str(self.value - other), str(self.error), n=self.n, power=self.power)
+            data = Data(str(self.value - other), str(self.error), n=self.n)
+            data.power = self.power
+            return data
 
     @unit_control
     def __const_sub(self, other):
@@ -260,7 +283,7 @@ class Data:
         :return: Data = result of the substraction
         """
 
-        return self.__number_sub(other)
+        return -1 * self.__number_sub(other)
 
     def __number_div(self, other):
         """

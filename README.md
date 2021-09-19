@@ -699,6 +699,8 @@ The last order produces a file called 'dummy.csv'. This file is given bellow:
 - Improve all Tests (they no longer test all functionalities)
 - Data should format in such a way, that the mean value is given by 1,...
 not the error
+- Refractor Table (access via column_name, access via tab\[index\], smarter design)
+- Allow fast access tables for weighted average between data or similar functionality
   
 - Add confindece band to plots
 - Add automatic x/y label to plot (for SimpleRegression already done)
@@ -706,3 +708,4 @@ not the error
 
 ## FIXME:
 - Covariant Matrix has problem with error (comparison with presentaion result shows a missing 2* in the total error)
+- Data \*\* 0.5 does not work for the units

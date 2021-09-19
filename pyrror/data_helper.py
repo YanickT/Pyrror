@@ -34,7 +34,7 @@ def round_data(data):
     error = data.error / (10 ** data.power)
 
     # determine first (non-zero) digit of error
-    error_power = math.floor(math.log10(error))
+    error_power = math.floor(math.log10(abs(error)))
 
     # round data to correct length of significant digits
     error = round(error * 10 ** (- error_power), data.n - 1)

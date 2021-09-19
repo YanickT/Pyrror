@@ -31,9 +31,9 @@ def instancemethod(f):
     :return: obj = return of the function
     """
 
-    def wrapper(self, *args):
+    def wrapper(self, *args, **kwargs):
         atts = copy.deepcopy(self.__dict__)
-        result = f(self, *args)
+        result = f(self, *args, **kwargs)
         if atts != self.__dict__:
             raise AttributeError("Instance was chanced during the method")
         return result

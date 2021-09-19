@@ -50,11 +50,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual("[%s,%s,%s]" % tuple(tab2.median()), "[6,3.11111,13.5]")
         self.assertEqual(tab3.median(), [2, 3])
 
-    def test_modus(self):
-        self.assertEqual(tab.modus(), [[1, 2, 3, 4, 5, 6, 7], [1], [1]])
-        self.assertEqual(tab2.modus(), [[9.0, 8.222312, 2, 4, 5, 6, 7], [2], [14.0]])
-        self.assertEqual(tab3.modus(), [[1, 2, 5], [2, 3, 6]])
-
     def test_max(self):
         self.assertEqual(tab.max(), [7, 1, 1])
         self.assertEqual("[%s, %s, %s]" % tuple(tab2.max()), "[9.0, 9, (15.0±2.0)]")

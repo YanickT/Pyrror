@@ -35,6 +35,10 @@ class Formula:
 
         if type(sympy_exp) == Symbol:
             return [[str(sympy_exp), 1]]
+            
+        if type(sympy_exp) == sympy.core.power.Pow:
+            infs = list(sympy_exp.args)
+            return [[str(infs[0]), infs[1]]]
 
         units = []
         exps = list(sympy_exp.args)
@@ -42,7 +46,7 @@ class Formula:
             if len(exp.free_symbols) == 0:
                 continue
             elif type(exp) == sympy.core.power.Pow:
-                units.append([str(exp.args[0]), float(exp.args[1])])
+                units.append([str(exp.args[0]), exp.args[1]])
             elif type(exp) == Symbol:
                 units.append([str(exp), 1])
             elif type(exp) in [sympy.core.numbers.Integer, sympy.core.numbers.Float]:
@@ -233,11 +237,12 @@ class Formula:
         return string
 
     @instancemethod
-    def calc(self, value_dict):
+    def calc(self, value_dict, sign=True):
         """
         Calculate a value using the formula. Through the types of the value_dict the uncertain variables are determined
         and the propagation of the uncertainty is calculated.
         :param value_dict: Dict[str: Union[int, float, Data, Const]] = Dict of the variables for the formula
+        :param sign: bool = specifies if the unit should be calculated
         :return: Union[Data, Const, int, float] = Result of the formula. Type depends on the input
         """
 
@@ -245,7 +250,10 @@ class Formula:
         types = [type(value_dict[key]) for key in value_dict]
 
         result = float(self.__calc_result(value_dict, type_dict))
-        unit = self.calc_unit(value_dict)
+        if sign:
+            unit = self.calc_unit(value_dict)
+        else:
+            unit = ""
 
         if Data in types:
             error = float(self.__calc_error(value_dict, type_dict))
